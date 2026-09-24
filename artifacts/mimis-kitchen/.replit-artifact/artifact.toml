@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "MiMi’s Kitchen"
+description = "A desktop restaurant management workspace for MiMi’s Kitchen, starting with an empty dashboard and navigation for ingredients, menu profitability, trends, and settings."
+version = "1.0.0"
+id = "artifacts/mimis-kitchen"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25438
+
+[services.development]
+run = "pnpm --filter @workspace/mimis-kitchen run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mimis-kitchen", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/mimis-kitchen/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25438"
+BASE_PATH = "/"
