@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { desc, eq, sql } from "drizzle-orm";
-import { db, ingredientsTable, type IngredientRecord } from "@workspace/db";
+import { db, ingredientsTable, recipeLinesTable, type IngredientRecord } from "@workspace/db";
 import {
   CreateIngredientBody,
   CreateIngredientResponse,
@@ -162,6 +162,14 @@ router.delete("/ingredients/:id", async (req, res): Promise<void> => {
   const params = DeleteIngredientParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: "Choose a valid ingredient to delete." });
+    return;
+  }
+  const [inRecipe] = await db.select({ id: recipeLinesTable.id })
+    .from(recipeLinesTable)
+    .where(eq(recipeLinesTable.ingredientId, params.data.id))
+    .limit(1);
+  if (inRecipe) {
+    res.status(409).json({ error: "This ingredient is used in a menu recipe. Remove it from the recipe before deleting it." });
     return;
   }
   const [deleted] = await db

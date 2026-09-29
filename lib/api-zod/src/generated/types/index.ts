@@ -11,3 +11,7 @@ export * from './healthStatus';
 export * from './ingredient';
 export * from './ingredientInput';
 export * from './ingredientUnit';
+export * from './menuItem';
+export * from './menuItemInput';
+export * from './recipeLine';
+export * from './recipeLineInput';

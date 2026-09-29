@@ -53,6 +53,45 @@ export interface Ingredient {
   lastUpdated: string;
 }
 
+export interface RecipeLineInput {
+  /** @minimum 1 */
+  ingredientId: number;
+  /** @exclusiveMinimum 0 */
+  quantity: number;
+  unit: IngredientUnit;
+}
+
+export interface MenuItemInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+  /** @exclusiveMinimum 0 */
+  sellingPrice: number;
+  /** @minItems 1 */
+  recipe: RecipeLineInput[];
+}
+
+export interface RecipeLine {
+  ingredientId: number;
+  ingredientName: string;
+  quantity: number;
+  unit: IngredientUnit;
+  ingredientCost: number;
+}
+
+export interface MenuItem {
+  id: number;
+  name: string;
+  sellingPrice: number;
+  recipeCost: number;
+  profit: number;
+  foodCostPercent: number;
+  profitMarginPercent: number;
+  recipe: RecipeLine[];
+}
+
 export interface ErrorResponse {
   error: string;
 }

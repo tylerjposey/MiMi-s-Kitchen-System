@@ -119,3 +119,127 @@ export const DeleteIngredientParams = zod.object({
 export const DeleteIngredientResponse = zod.void()
 
 
+/**
+ * @summary List menu items with costs calculated from current ingredient prices
+ */
+export const ListMenuItemsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "sellingPrice": zod.number(),
+  "recipeCost": zod.number(),
+  "profit": zod.number(),
+  "foodCostPercent": zod.number(),
+  "profitMarginPercent": zod.number(),
+  "recipe": zod.array(zod.object({
+  "ingredientId": zod.number().int(),
+  "ingredientName": zod.string(),
+  "quantity": zod.number(),
+  "unit": zod.enum(['lb', 'oz', 'gallon', 'quart', 'cup', 'fl oz', 'each']),
+  "ingredientCost": zod.number()
+}))
+})
+export const ListMenuItemsResponse = zod.array(ListMenuItemsResponseItem)
+
+
+/**
+ * @summary Create a menu item and its recipe
+ */
+export const createMenuItemBodyNameMax = 160;
+
+export const createMenuItemBodySellingPriceExclusiveMin = 0;
+
+
+export const createMenuItemBodyRecipeItemQuantityExclusiveMin = 0;
+
+
+
+
+export const CreateMenuItemBody = zod.object({
+  "name": zod.string().min(1).max(createMenuItemBodyNameMax),
+  "sellingPrice": zod.number().gt(createMenuItemBodySellingPriceExclusiveMin),
+  "recipe": zod.array(zod.object({
+  "ingredientId": zod.number().int().min(1),
+  "quantity": zod.number().gt(createMenuItemBodyRecipeItemQuantityExclusiveMin),
+  "unit": zod.enum(['lb', 'oz', 'gallon', 'quart', 'cup', 'fl oz', 'each'])
+})).min(1)
+})
+
+export const CreateMenuItemResponse = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "sellingPrice": zod.number(),
+  "recipeCost": zod.number(),
+  "profit": zod.number(),
+  "foodCostPercent": zod.number(),
+  "profitMarginPercent": zod.number(),
+  "recipe": zod.array(zod.object({
+  "ingredientId": zod.number().int(),
+  "ingredientName": zod.string(),
+  "quantity": zod.number(),
+  "unit": zod.enum(['lb', 'oz', 'gallon', 'quart', 'cup', 'fl oz', 'each']),
+  "ingredientCost": zod.number()
+}))
+})
+
+
+/**
+ * @summary Update a menu item and replace its recipe
+ */
+
+
+
+export const UpdateMenuItemParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const updateMenuItemBodyNameMax = 160;
+
+export const updateMenuItemBodySellingPriceExclusiveMin = 0;
+
+
+export const updateMenuItemBodyRecipeItemQuantityExclusiveMin = 0;
+
+
+
+
+export const UpdateMenuItemBody = zod.object({
+  "name": zod.string().min(1).max(updateMenuItemBodyNameMax),
+  "sellingPrice": zod.number().gt(updateMenuItemBodySellingPriceExclusiveMin),
+  "recipe": zod.array(zod.object({
+  "ingredientId": zod.number().int().min(1),
+  "quantity": zod.number().gt(updateMenuItemBodyRecipeItemQuantityExclusiveMin),
+  "unit": zod.enum(['lb', 'oz', 'gallon', 'quart', 'cup', 'fl oz', 'each'])
+})).min(1)
+})
+
+export const UpdateMenuItemResponse = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "sellingPrice": zod.number(),
+  "recipeCost": zod.number(),
+  "profit": zod.number(),
+  "foodCostPercent": zod.number(),
+  "profitMarginPercent": zod.number(),
+  "recipe": zod.array(zod.object({
+  "ingredientId": zod.number().int(),
+  "ingredientName": zod.string(),
+  "quantity": zod.number(),
+  "unit": zod.enum(['lb', 'oz', 'gallon', 'quart', 'cup', 'fl oz', 'each']),
+  "ingredientCost": zod.number()
+}))
+})
+
+
+/**
+ * @summary Delete a menu item and its recipe
+ */
+
+
+
+export const DeleteMenuItemParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const DeleteMenuItemResponse = zod.void()
+
+

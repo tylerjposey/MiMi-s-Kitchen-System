@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import Ingredients from '@/pages/ingredients';
+import Menu from '@/pages/menu';
 import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 
 const queryClient = new QueryClient();
@@ -186,15 +187,6 @@ function Dashboard() {
         </section>
       </div>
     </div>
-  );
-}
-
-function Menu() {
-  return (
-    <>
-      <PageIntro eyebrow="Your offering" title="Menu" description="See each dish as a complete picture: the ingredients behind it and the margin it needs to earn." />
-      <EmptyPanel icon={<UtensilsCrossed size={26} strokeWidth={1.5} />} title="The menu is yours to shape." message="No menu items have been created yet." testId="empty-menu" />
-    </>
   );
 }
 

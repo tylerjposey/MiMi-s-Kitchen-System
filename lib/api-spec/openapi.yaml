@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: ingredients
     description: Ingredient purchasing records
+  - name: menu
+    description: Menu items and their ingredient recipes
 paths:
   /healthz:
     get:
@@ -113,6 +115,99 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Ingredient is used in a recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /menu-items:
+    get:
+      operationId: listMenuItems
+      tags: [menu]
+      summary: List menu items with costs calculated from current ingredient prices
+      responses:
+        "200":
+          description: Menu items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MenuItem"
+    post:
+      operationId: createMenuItem
+      tags: [menu]
+      summary: Create a menu item and its recipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MenuItemInput"
+      responses:
+        "201":
+          description: Created menu item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItem"
+        "400":
+          description: Invalid menu item or recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /menu-items/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    put:
+      operationId: updateMenuItem
+      tags: [menu]
+      summary: Update a menu item and replace its recipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MenuItemInput"
+      responses:
+        "200":
+          description: Updated menu item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItem"
+        "400":
+          description: Invalid menu item or recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Menu item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteMenuItem
+      tags: [menu]
+      summary: Delete a menu item and its recipe
+      responses:
+        "204":
+          description: Menu item deleted
+        "404":
+          description: Menu item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -167,6 +262,72 @@ components:
         lastUpdated:
           type: string
           format: date-time
+    RecipeLineInput:
+      type: object
+      additionalProperties: false
+      required: [ingredientId, quantity, unit]
+      properties:
+        ingredientId:
+          type: integer
+          minimum: 1
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+        unit:
+          $ref: "#/components/schemas/IngredientUnit"
+    MenuItemInput:
+      type: object
+      additionalProperties: false
+      required: [name, sellingPrice, recipe]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        sellingPrice:
+          type: number
+          exclusiveMinimum: 0
+        recipe:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RecipeLineInput"
+    RecipeLine:
+      type: object
+      required: [ingredientId, ingredientName, quantity, unit, ingredientCost]
+      properties:
+        ingredientId:
+          type: integer
+        ingredientName:
+          type: string
+        quantity:
+          type: number
+        unit:
+          $ref: "#/components/schemas/IngredientUnit"
+        ingredientCost:
+          type: number
+    MenuItem:
+      type: object
+      required: [id, name, sellingPrice, recipeCost, profit, foodCostPercent, profitMarginPercent, recipe]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sellingPrice:
+          type: number
+        recipeCost:
+          type: number
+        profit:
+          type: number
+        foodCostPercent:
+          type: number
+        profitMarginPercent:
+          type: number
+        recipe:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeLine"
     ErrorResponse:
       type: object
       required: [error]

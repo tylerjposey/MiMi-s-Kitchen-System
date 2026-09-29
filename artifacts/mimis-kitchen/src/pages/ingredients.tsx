@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getListIngredientsQueryKey, useCreateIngredient, useDeleteIngredient, useListIngredients, useUpdateIngredient, type Ingredient, type IngredientInput, type IngredientUnit } from '@workspace/api-client-react';
+import { getListIngredientsQueryKey, getListMenuItemsQueryKey, useCreateIngredient, useDeleteIngredient, useListIngredients, useUpdateIngredient, type Ingredient, type IngredientInput, type IngredientUnit } from '@workspace/api-client-react';
 import { ArrowRightLeft, Pencil, Plus, RotateCcw, Sprout, Trash2, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -148,7 +148,7 @@ export default function Ingredients() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [deleting, setDeleting] = useState<Ingredient | null>(null);
-  const [deleteError, setDeleteError] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = ingredients?.find((ingredient) => ingredient.id === selectedId);
 
@@ -158,19 +158,22 @@ export default function Ingredients() {
     if (editing) await update.mutateAsync({ id: editing.id, data });
     else await create.mutateAsync({ data });
     await queryClient.invalidateQueries({ queryKey: getListIngredientsQueryKey() });
+    await queryClient.invalidateQueries({ queryKey: getListMenuItemsQueryKey() });
     setFormOpen(false);
     setEditing(null);
   };
   const confirmDelete = async () => {
     if (!deleting) return;
-    setDeleteError(false);
+    setDeleteError(null);
     try {
       await remove.mutateAsync({ id: deleting.id });
       await queryClient.invalidateQueries({ queryKey: getListIngredientsQueryKey() });
       if (selectedId === deleting.id) setSelectedId(null);
       setDeleting(null);
-    } catch {
-      setDeleteError(true);
+    } catch (error) {
+      setDeleteError(error && typeof error === 'object' && 'status' in error && error.status === 409
+        ? 'This ingredient is used in a menu recipe. Remove it from the recipe before deleting it.'
+        : 'We couldn’t remove this ingredient. Please try again.');
     }
   };
 
@@ -225,7 +228,7 @@ export default function Ingredients() {
                   <td className="py-3 pl-3 pr-5"><div className="flex items-center gap-0.5">
                     <button type="button" data-testid={`button-convert-ingredient-${ingredient.id}`} aria-label={`Convert ${ingredient.name}`} title="Convert units" onClick={() => setSelectedId(ingredient.id)} className="rounded-md p-1.5 text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]"><ArrowRightLeft size={14} /></button>
                     <button type="button" data-testid={`button-edit-ingredient-${ingredient.id}`} aria-label={`Edit ${ingredient.name}`} title="Edit" onClick={() => openEdit(ingredient)} className="rounded-md p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--primary))]"><Pencil size={14} /></button>
-                    <button type="button" data-testid={`button-delete-ingredient-${ingredient.id}`} aria-label={`Delete ${ingredient.name}`} title="Delete" onClick={() => { setDeleteError(false); setDeleting(ingredient); }} className="rounded-md p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.08)] hover:text-[hsl(var(--destructive))]"><Trash2 size={14} /></button>
+                     <button type="button" data-testid={`button-delete-ingredient-${ingredient.id}`} aria-label={`Delete ${ingredient.name}`} title="Delete" onClick={() => { setDeleteError(null); setDeleting(ingredient); }} className="rounded-md p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.08)] hover:text-[hsl(var(--destructive))]"><Trash2 size={14} /></button>
                   </div></td>
                 </tr>)}
               </tbody>
@@ -242,10 +245,10 @@ export default function Ingredients() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleting} onOpenChange={(open) => { if (!open && !remove.isPending) { setDeleting(null); setDeleteError(false); } }}>
+       <AlertDialog open={!!deleting} onOpenChange={(open) => { if (!open && !remove.isPending) { setDeleting(null); setDeleteError(null); } }}>
         <AlertDialogContent className="border-[hsl(var(--border))] bg-[hsl(var(--card))]">
           <AlertDialogHeader><AlertDialogTitle className="font-display text-[27px] font-medium">Remove this ingredient?</AlertDialogTitle><AlertDialogDescription className="text-[13px] leading-relaxed">“{deleting?.name}” will be removed from your kitchen ledger. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-          {deleteError && <p role="alert" data-testid="error-delete-ingredient" className="rounded-lg bg-[hsl(var(--destructive)/.07)] p-3 text-[12px] text-[hsl(var(--destructive))]">We couldn’t remove this ingredient. Please try again.</p>}
+           {deleteError && <p role="alert" data-testid="error-delete-ingredient" className="rounded-lg bg-[hsl(var(--destructive)/.07)] p-3 text-[12px] text-[hsl(var(--destructive))]">{deleteError}</p>}
           <AlertDialogFooter><AlertDialogCancel data-testid="button-cancel-delete" disabled={remove.isPending} className={secondaryButton}>Keep ingredient</AlertDialogCancel><AlertDialogAction data-testid="button-confirm-delete" disabled={remove.isPending} onClick={(event) => { event.preventDefault(); void confirmDelete(); }} className="rounded-lg bg-[hsl(var(--destructive))] px-4 py-2 text-[12px] font-semibold text-[hsl(var(--destructive-foreground))] hover:bg-[hsl(var(--destructive)/.9)]">{remove.isPending ? 'Removing…' : 'Remove ingredient'}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,0 +1,104 @@
+# Phase 3 — Menu Items and Recipe Builder
+
+Continue from the existing application.
+
+Do not redesign completed sections unless required for functionality.
+
+For this phase, build the Menu tab.
+
+The restaurant owner must be able to:
+
+- Add a menu item
+- Edit a menu item
+- Delete a menu item
+- Build and edit its recipe
+
+Do not include menu categories.
+
+The Menu table should display:
+
+- Menu Item
+- Selling Price
+- Recipe Cost
+- Profit
+- Profit Margin %
+- Actions
+
+Each menu item should contain:
+
+Menu Item Name:
+- Required text field
+
+Selling Price:
+- Required currency field
+- Must be greater than zero
+
+Recipe:
+- Built using ingredients already stored in the Ingredients tab
+
+The recipe builder should contain rows with:
+
+- Ingredient dropdown
+- Quantity
+- Unit
+- Calculated Ingredient Cost
+- Remove button
+
+Include a button:
+
++ Add Ingredient
+
+The ingredient dropdown should show only existing ingredients.
+
+The recipe unit choices must depend on the selected ingredient’s measurement type.
+
+If an ingredient is purchased by lb or oz:
+- Recipe unit may be lb or oz
+
+If purchased using gallon, quart, cup, or fl oz:
+- Recipe unit may use any compatible volume unit
+
+If purchased as each:
+- Recipe unit must remain each
+
+Automatically calculate the cost of each ingredient used in the recipe.
+
+Example:
+
+Chicken costs $3.20 per lb.
+
+Recipe uses 6 oz.
+
+System should calculate:
+
+$3.20 / 16 = $0.20 per oz
+
+6 × $0.20 = $1.20 ingredient cost
+
+Automatically calculate:
+
+Total Ingredient Cost = sum of all recipe ingredient costs
+
+Profit = Selling Price - Total Ingredient Cost
+
+Food Cost % = Total Ingredient Cost / Selling Price × 100
+
+Profit Margin % = Profit / Selling Price × 100
+
+At the bottom of the recipe editor, display:
+
+- Total Ingredient Cost
+- Selling Price
+- Profit
+- Food Cost %
+- Profit Margin %
+
+These calculations should update live while editing.
+
+Do not allow the user to manually enter total recipe cost.
+
+If an ingredient price changes later, every recipe containing that ingredient must automatically recalculate using the new ingredient cost.
+
+All menu data and recipes must persist after refresh.
+
+Do not preload sample menu items.

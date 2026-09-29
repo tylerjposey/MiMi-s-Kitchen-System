@@ -1,0 +1,214 @@
+import { Router, type IRouter } from "express";
+import { desc, eq, inArray } from "drizzle-orm";
+import {
+  db,
+  ingredientsTable,
+  menuItemsTable,
+  recipeLinesTable,
+  type IngredientRecord,
+} from "@workspace/db";
+import {
+  CreateMenuItemBody,
+  CreateMenuItemResponse,
+  DeleteMenuItemParams,
+  ListMenuItemsResponse,
+  UpdateMenuItemBody,
+  UpdateMenuItemParams,
+  UpdateMenuItemResponse,
+  type IngredientUnit,
+  type MenuItemInput,
+} from "@workspace/api-zod";
+
+const router: IRouter = Router();
+
+const dimensions: Record<IngredientUnit, "weight" | "volume" | "count"> = {
+  lb: "weight",
+  oz: "weight",
+  gallon: "volume",
+  quart: "volume",
+  cup: "volume",
+  "fl oz": "volume",
+  each: "count",
+};
+
+// Conversion factors within their dimension, in oz / fl oz / each.
+const factors: Record<IngredientUnit, number> = {
+  lb: 16,
+  oz: 1,
+  gallon: 128,
+  quart: 32,
+  cup: 8,
+  "fl oz": 1,
+  each: 1,
+};
+
+function ingredientCost(
+  ingredient: IngredientRecord,
+  quantity: number,
+  unit: IngredientUnit,
+): number {
+  return (ingredient.purchasePriceCents / 100)
+    * (quantity * factors[unit] / factors[ingredient.purchaseUnit])
+    / ingredient.purchaseQuantity;
+}
+
+async function readMenuItems(id?: number) {
+  const items = await db.select().from(menuItemsTable)
+    .where(id === undefined ? undefined : eq(menuItemsTable.id, id))
+    .orderBy(desc(menuItemsTable.id));
+  const lines = await db
+    .select({ line: recipeLinesTable, ingredient: ingredientsTable })
+    .from(recipeLinesTable)
+    .innerJoin(ingredientsTable, eq(recipeLinesTable.ingredientId, ingredientsTable.id))
+    .where(id === undefined ? undefined : eq(recipeLinesTable.menuItemId, id))
+    .orderBy(recipeLinesTable.id);
+
+  return items.map((item) => {
+    const recipe = lines
+      .filter(({ line }) => line.menuItemId === item.id)
+      .map(({ line, ingredient }) => ({
+        ingredientId: ingredient.id,
+        ingredientName: ingredient.name,
+        quantity: line.quantity,
+        unit: line.unit,
+        ingredientCost: ingredientCost(ingredient, line.quantity, line.unit),
+      }));
+    const sellingPrice = item.sellingPriceCents / 100;
+    const recipeCost = recipe.reduce((total, line) => total + line.ingredientCost, 0);
+    const profit = sellingPrice - recipeCost;
+    return {
+      id: item.id,
+      name: item.name,
+      sellingPrice,
+      recipe,
+      recipeCost,
+      profit,
+      foodCostPercent: recipeCost / sellingPrice * 100,
+      profitMarginPercent: profit / sellingPrice * 100,
+    };
+  });
+}
+
+async function validateInput(data: MenuItemInput): Promise<
+  | { error: string; value?: never }
+  | { error?: never; value: { name: string; sellingPriceCents: number; recipe: MenuItemInput["recipe"] } }
+> {
+  const name = data.name.trim();
+  if (!name || name.length > 160) {
+    return { error: "Enter a menu item name (up to 160 characters)." };
+  }
+  const cents = Math.round(data.sellingPrice * 100);
+  if (!Number.isFinite(data.sellingPrice) || !Number.isSafeInteger(cents)
+    || cents < 1 || cents > 2_147_483_647
+    || Math.abs(data.sellingPrice * 100 - cents) > 0.000001) {
+    return { error: "Selling price must be at least $0.01 with at most two decimal places." };
+  }
+  if (!data.recipe.length) {
+    return { error: "Add at least one ingredient to the recipe." };
+  }
+
+  const ingredientIds = [...new Set(data.recipe.map((line) => line.ingredientId))];
+  const ingredients = await db.select().from(ingredientsTable)
+    .where(inArray(ingredientsTable.id, ingredientIds));
+  const byId = new Map(ingredients.map((ingredient) => [ingredient.id, ingredient]));
+  for (const line of data.recipe) {
+    const ingredient = byId.get(line.ingredientId);
+    if (!ingredient) {
+      return { error: "A recipe ingredient is no longer available. Refresh and choose another." };
+    }
+    if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
+      return { error: "Recipe quantities must be greater than zero." };
+    }
+    if (dimensions[line.unit] !== dimensions[ingredient.purchaseUnit]) {
+      return { error: `Choose a compatible unit for ${ingredient.name}.` };
+    }
+    if (!Number.isFinite(ingredientCost(ingredient, line.quantity, line.unit))) {
+      return { error: "A recipe quantity is too large to calculate its cost." };
+    }
+  }
+  return { value: { name, sellingPriceCents: cents, recipe: data.recipe } };
+}
+
+function bodyError(path: PropertyKey | undefined): string {
+  switch (path) {
+    case "name": return "Enter a menu item name (up to 160 characters).";
+    case "sellingPrice": return "Selling price must be greater than zero.";
+    case "recipe": return "Add at least one recipe ingredient with a valid quantity and unit.";
+    default: return "Check the menu item details and try again.";
+  }
+}
+
+router.get("/menu-items", async (_req, res): Promise<void> => {
+  res.json(ListMenuItemsResponse.parse(await readMenuItems()));
+});
+
+router.post("/menu-items", async (req, res): Promise<void> => {
+  const parsed = CreateMenuItemBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: bodyError(parsed.error.issues[0]?.path[0]) });
+    return;
+  }
+  const input = await validateInput(parsed.data);
+  if (!input.value) {
+    res.status(400).json({ error: input.error });
+    return;
+  }
+  const { recipe, ...item } = input.value;
+  const id = await db.transaction(async (tx) => {
+    const [created] = await tx.insert(menuItemsTable).values(item).returning({ id: menuItemsTable.id });
+    await tx.insert(recipeLinesTable).values(recipe.map((line) => ({ ...line, menuItemId: created.id })));
+    return created.id;
+  });
+  const [created] = await readMenuItems(id);
+  res.status(201).json(CreateMenuItemResponse.parse(created));
+});
+
+router.put("/menu-items/:id", async (req, res): Promise<void> => {
+  const params = UpdateMenuItemParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Choose a valid menu item to edit." });
+    return;
+  }
+  const parsed = UpdateMenuItemBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: bodyError(parsed.error.issues[0]?.path[0]) });
+    return;
+  }
+  const input = await validateInput(parsed.data);
+  if (!input.value) {
+    res.status(400).json({ error: input.error });
+    return;
+  }
+  const { recipe, ...item } = input.value;
+  const updated = await db.transaction(async (tx) => {
+    const [existing] = await tx.update(menuItemsTable).set(item)
+      .where(eq(menuItemsTable.id, params.data.id)).returning({ id: menuItemsTable.id });
+    if (!existing) return false;
+    await tx.delete(recipeLinesTable).where(eq(recipeLinesTable.menuItemId, existing.id));
+    await tx.insert(recipeLinesTable).values(recipe.map((line) => ({ ...line, menuItemId: existing.id })));
+    return true;
+  });
+  if (!updated) {
+    res.status(404).json({ error: "Menu item not found. Refresh the list and try again." });
+    return;
+  }
+  const [result] = await readMenuItems(params.data.id);
+  res.json(UpdateMenuItemResponse.parse(result));
+});
+
+router.delete("/menu-items/:id", async (req, res): Promise<void> => {
+  const params = DeleteMenuItemParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Choose a valid menu item to delete." });
+    return;
+  }
+  const [deleted] = await db.delete(menuItemsTable).where(eq(menuItemsTable.id, params.data.id))
+    .returning({ id: menuItemsTable.id });
+  if (!deleted) {
+    res.status(404).json({ error: "Menu item not found. Refresh the list and try again." });
+    return;
+  }
+  res.sendStatus(204);
+});
+
+export default router;
