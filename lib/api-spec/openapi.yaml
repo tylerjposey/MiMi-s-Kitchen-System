@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: ingredients
+    description: Ingredient purchasing records
 paths:
   /healthz:
     get:
@@ -24,6 +26,93 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /ingredients:
+    get:
+      operationId: listIngredients
+      tags: [ingredients]
+      summary: List all ingredients
+      responses:
+        "200":
+          description: Ingredients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ingredient"
+    post:
+      operationId: createIngredient
+      tags: [ingredients]
+      summary: Add an ingredient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngredientInput"
+      responses:
+        "201":
+          description: Created ingredient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ingredient"
+        "400":
+          description: Invalid ingredient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /ingredients/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    put:
+      operationId: updateIngredient
+      tags: [ingredients]
+      summary: Edit an ingredient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngredientInput"
+      responses:
+        "200":
+          description: Updated ingredient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ingredient"
+        "400":
+          description: Invalid ingredient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Ingredient not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteIngredient
+      tags: [ingredients]
+      summary: Delete an ingredient
+      responses:
+        "204":
+          description: Ingredient deleted
+        "404":
+          description: Ingredient not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +122,55 @@ components:
           type: string
       required:
         - status
+    IngredientUnit:
+      type: string
+      enum: [lb, oz, gallon, quart, cup, fl oz, each]
+    IngredientInput:
+      type: object
+      additionalProperties: false
+      required: [name, purchaseQuantity, purchaseUnit, purchasePrice]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        purchaseQuantity:
+          type: number
+          exclusiveMinimum: 0
+        purchaseUnit:
+          $ref: "#/components/schemas/IngredientUnit"
+        purchasePrice:
+          type: number
+          minimum: 0
+        supplier:
+          type: ["string", "null"]
+          maxLength: 160
+    Ingredient:
+      type: object
+      required: [id, name, purchaseQuantity, purchaseUnit, purchasePrice, costPerUnit, supplier, lastUpdated]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        purchaseQuantity:
+          type: number
+        purchaseUnit:
+          $ref: "#/components/schemas/IngredientUnit"
+        purchasePrice:
+          type: number
+        costPerUnit:
+          type: number
+          description: Purchase price in dollars divided by purchase quantity
+        supplier:
+          type: ["string", "null"]
+        lastUpdated:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
 

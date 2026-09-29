@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
+import Ingredients from '@/pages/ingredients';
 import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 
 const queryClient = new QueryClient();
@@ -185,15 +186,6 @@ function Dashboard() {
         </section>
       </div>
     </div>
-  );
-}
-
-function Ingredients() {
-  return (
-    <>
-      <PageIntro eyebrow="Kitchen inventory" title="Ingredients" description="Keep the building blocks of every menu item in one measured, easy-to-review place." />
-      <EmptyPanel icon={<Sprout size={26} strokeWidth={1.5} />} title="A clean shelf, for now." message="No ingredients have been added yet." testId="empty-ingredients" />
-    </>
   );
 }
 

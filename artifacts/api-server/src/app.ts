@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type ErrorRequestHandler, type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
@@ -30,5 +30,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
+  req.log.error({ err: error }, "Unexpected API error");
+  if (res.headersSent) {
+    next(error);
+    return;
+  }
+  res.status(500).json({ error: "Something went wrong. Please try again." });
+};
+app.use(errorHandler);
 
 export default app;

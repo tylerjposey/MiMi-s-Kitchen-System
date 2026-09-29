@@ -1,0 +1,1 @@
+- [MiMi’s Kitchen layout continuity](mimis-layout-continuity.md) — preserve the existing desktop shell and navigation across later feature phases unless a redesign is requested.
