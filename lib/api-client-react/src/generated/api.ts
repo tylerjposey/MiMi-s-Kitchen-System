@@ -25,7 +25,9 @@ import type {
   Ingredient,
   IngredientInput,
   MenuItem,
-  MenuItemInput
+  MenuItemInput,
+  WorkspaceSettings,
+  WorkspaceSettingsInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -787,5 +789,170 @@ export const useDeleteMenuItem = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getDeleteMenuItemMutationOptions(options));
+    }
+
+export const getGetWorkspaceSettingsUrl = () => {
+
+
+
+
+  return `/api/settings`
+}
+
+/**
+ * @summary Get the profitability threshold
+ */
+export const getWorkspaceSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<WorkspaceSettings> => {
+
+  return customFetch<WorkspaceSettings>(getGetWorkspaceSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWorkspaceSettingsQueryKey = () => {
+    return [
+    `/api/settings`
+    ] as const;
+    }
+
+
+export const getGetWorkspaceSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getWorkspaceSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkspaceSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWorkspaceSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkspaceSettings>>> = ({ signal }) => getWorkspaceSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWorkspaceSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWorkspaceSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getWorkspaceSettings>>>
+export type GetWorkspaceSettingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the profitability threshold
+ */
+
+export function useGetWorkspaceSettings<TData = Awaited<ReturnType<typeof getWorkspaceSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkspaceSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWorkspaceSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateWorkspaceSettingsUrl = () => {
+
+
+
+
+  return `/api/settings`
+}
+
+/**
+ * @summary Set the low profit margin threshold
+ */
+export const updateWorkspaceSettings = async (workspaceSettingsInput: WorkspaceSettingsInput, options?: Parameters<typeof customFetch>[1]): Promise<WorkspaceSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<WorkspaceSettings>(getUpdateWorkspaceSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(workspaceSettingsInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateWorkspaceSettingsMutationKey = () => ['updateWorkspaceSettings'] as const;
+
+export const getUpdateWorkspaceSettingsMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWorkspaceSettings>>, TError,UpdateWorkspaceSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateWorkspaceSettings>>, TError,UpdateWorkspaceSettingsMutationVariables, TContext> => {
+
+const mutationKey = getUpdateWorkspaceSettingsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateWorkspaceSettings>>, UpdateWorkspaceSettingsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateWorkspaceSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateWorkspaceSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateWorkspaceSettings>>>
+    export type UpdateWorkspaceSettingsMutationBody = BodyType<WorkspaceSettingsInput>
+    export type UpdateWorkspaceSettingsMutationError = ErrorType<ErrorResponse>
+    export type UpdateWorkspaceSettingsMutationVariables = {data: BodyType<WorkspaceSettingsInput>}
+
+    /**
+ * @summary Set the low profit margin threshold
+ */
+export const useUpdateWorkspaceSettings = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWorkspaceSettings>>, TError,UpdateWorkspaceSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateWorkspaceSettings>>,
+        TError,
+        UpdateWorkspaceSettingsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateWorkspaceSettingsMutationOptions(options));
     }
 

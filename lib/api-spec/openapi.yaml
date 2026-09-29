@@ -14,6 +14,8 @@ tags:
     description: Ingredient purchasing records
   - name: menu
     description: Menu items and their ingredient recipes
+  - name: settings
+    description: Workspace profitability preferences
 paths:
   /healthz:
     get:
@@ -208,6 +210,41 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /settings:
+    get:
+      operationId: getWorkspaceSettings
+      tags: [settings]
+      summary: Get the profitability threshold
+      responses:
+        "200":
+          description: Workspace settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSettings"
+    put:
+      operationId: updateWorkspaceSettings
+      tags: [settings]
+      summary: Set the low profit margin threshold
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceSettingsInput"
+      responses:
+        "200":
+          description: Updated workspace settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSettings"
+        "400":
+          description: Invalid threshold
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -308,7 +345,7 @@ components:
           type: number
     MenuItem:
       type: object
-      required: [id, name, sellingPrice, recipeCost, profit, foodCostPercent, profitMarginPercent, recipe]
+      required: [id, name, sellingPrice, recipeCost, profit, foodCostPercent, profitMarginPercent, costIncreased, recipe]
       properties:
         id:
           type: integer
@@ -324,10 +361,28 @@ components:
           type: number
         profitMarginPercent:
           type: number
+        costIncreased:
+          type: boolean
+          description: Ingredient cost increased since this menu item's recipe was last saved
         recipe:
           type: array
           items:
             $ref: "#/components/schemas/RecipeLine"
+    WorkspaceSettingsInput:
+      type: object
+      additionalProperties: false
+      required: [lowProfitMarginThreshold]
+      properties:
+        lowProfitMarginThreshold:
+          type: number
+          minimum: 0
+          maximum: 100
+    WorkspaceSettings:
+      type: object
+      required: [lowProfitMarginThreshold]
+      properties:
+        lowProfitMarginThreshold:
+          type: number
     ErrorResponse:
       type: object
       required: [error]

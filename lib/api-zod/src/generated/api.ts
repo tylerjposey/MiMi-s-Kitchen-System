@@ -130,6 +130,7 @@ export const ListMenuItemsResponseItem = zod.object({
   "profit": zod.number(),
   "foodCostPercent": zod.number(),
   "profitMarginPercent": zod.number(),
+  "costIncreased": zod.boolean().describe('Ingredient cost increased since this menu item\'s recipe was last saved'),
   "recipe": zod.array(zod.object({
   "ingredientId": zod.number().int(),
   "ingredientName": zod.string(),
@@ -172,6 +173,7 @@ export const CreateMenuItemResponse = zod.object({
   "profit": zod.number(),
   "foodCostPercent": zod.number(),
   "profitMarginPercent": zod.number(),
+  "costIncreased": zod.boolean().describe('Ingredient cost increased since this menu item\'s recipe was last saved'),
   "recipe": zod.array(zod.object({
   "ingredientId": zod.number().int(),
   "ingredientName": zod.string(),
@@ -220,6 +222,7 @@ export const UpdateMenuItemResponse = zod.object({
   "profit": zod.number(),
   "foodCostPercent": zod.number(),
   "profitMarginPercent": zod.number(),
+  "costIncreased": zod.boolean().describe('Ingredient cost increased since this menu item\'s recipe was last saved'),
   "recipe": zod.array(zod.object({
   "ingredientId": zod.number().int(),
   "ingredientName": zod.string(),
@@ -241,5 +244,30 @@ export const DeleteMenuItemParams = zod.object({
 })
 
 export const DeleteMenuItemResponse = zod.void()
+
+
+/**
+ * @summary Get the profitability threshold
+ */
+export const GetWorkspaceSettingsResponse = zod.object({
+  "lowProfitMarginThreshold": zod.number()
+})
+
+
+/**
+ * @summary Set the low profit margin threshold
+ */
+export const updateWorkspaceSettingsBodyLowProfitMarginThresholdMin = 0;
+export const updateWorkspaceSettingsBodyLowProfitMarginThresholdMax = 100;
+
+
+
+export const UpdateWorkspaceSettingsBody = zod.object({
+  "lowProfitMarginThreshold": zod.number().min(updateWorkspaceSettingsBodyLowProfitMarginThresholdMin).max(updateWorkspaceSettingsBodyLowProfitMarginThresholdMax)
+})
+
+export const UpdateWorkspaceSettingsResponse = zod.object({
+  "lowProfitMarginThreshold": zod.number()
+})
 
 

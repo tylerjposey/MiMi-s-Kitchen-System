@@ -85,13 +85,14 @@ async function readMenuItems(id?: number) {
       profit,
       foodCostPercent: recipeCost / sellingPrice * 100,
       profitMarginPercent: profit / sellingPrice * 100,
+      costIncreased: item.baselineRecipeCost !== null && recipeCost > item.baselineRecipeCost + 0.005,
     };
   });
 }
 
 async function validateInput(data: MenuItemInput): Promise<
   | { error: string; value?: never }
-  | { error?: never; value: { name: string; sellingPriceCents: number; recipe: MenuItemInput["recipe"] } }
+  | { error?: never; value: { name: string; sellingPriceCents: number; baselineRecipeCost: number; recipe: MenuItemInput["recipe"] } }
 > {
   const name = data.name.trim();
   if (!name || name.length > 160) {
@@ -111,6 +112,7 @@ async function validateInput(data: MenuItemInput): Promise<
   const ingredients = await db.select().from(ingredientsTable)
     .where(inArray(ingredientsTable.id, ingredientIds));
   const byId = new Map(ingredients.map((ingredient) => [ingredient.id, ingredient]));
+  let baselineRecipeCost = 0;
   for (const line of data.recipe) {
     const ingredient = byId.get(line.ingredientId);
     if (!ingredient) {
@@ -122,11 +124,13 @@ async function validateInput(data: MenuItemInput): Promise<
     if (dimensions[line.unit] !== dimensions[ingredient.purchaseUnit]) {
       return { error: `Choose a compatible unit for ${ingredient.name}.` };
     }
-    if (!Number.isFinite(ingredientCost(ingredient, line.quantity, line.unit))) {
+    const cost = ingredientCost(ingredient, line.quantity, line.unit);
+    if (!Number.isFinite(cost) || !Number.isFinite(baselineRecipeCost + cost)) {
       return { error: "A recipe quantity is too large to calculate its cost." };
     }
+    baselineRecipeCost += cost;
   }
-  return { value: { name, sellingPriceCents: cents, recipe: data.recipe } };
+  return { value: { name, sellingPriceCents: cents, baselineRecipeCost, recipe: data.recipe } };
 }
 
 function bodyError(path: PropertyKey | undefined): string {

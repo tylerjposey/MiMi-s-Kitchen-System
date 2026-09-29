@@ -15,5 +15,7 @@ export interface MenuItem {
   profit: number;
   foodCostPercent: number;
   profitMarginPercent: number;
+  /** Ingredient cost increased since this menu item's recipe was last saved */
+  costIncreased: boolean;
   recipe: RecipeLine[];
 }

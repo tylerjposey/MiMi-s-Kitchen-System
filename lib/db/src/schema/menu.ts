@@ -10,6 +10,8 @@ export const menuItemsTable = pgTable(
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
     sellingPriceCents: integer("selling_price_cents").notNull(),
+    // Null for pre-existing menu items whose historical recipe cost is unknown.
+    baselineRecipeCost: doublePrecision("baseline_recipe_cost"),
   },
   (table) => [
     check("menu_items_positive_price", sql`${table.sellingPriceCents} > 0`),

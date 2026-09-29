@@ -1,5 +1,6 @@
 export * from "./ingredients";
 export * from "./menu";
+export * from "./settings";
 
 // Export your models here. Add one export per file
 // export * from "./posts";

@@ -1,1 +1,2 @@
 - [MiMi’s Kitchen layout continuity](mimis-layout-continuity.md) — preserve the existing desktop shell and navigation across later feature phases unless a redesign is requested.
+- [Profitability status history](profitability-status-history.md) — only report ingredient-cost increases when a saved recipe-cost baseline exists; unknown history is not an increase.

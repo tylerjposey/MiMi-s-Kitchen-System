@@ -15,3 +15,5 @@ export * from './menuItem';
 export * from './menuItemInput';
 export * from './recipeLine';
 export * from './recipeLineInput';
+export * from './workspaceSettings';
+export * from './workspaceSettingsInput';

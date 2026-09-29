@@ -1,12 +1,14 @@
 import { type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BarChart3, ChevronRight, CircleHelp, CookingPot, Database, LayoutDashboard, List, PackageOpen, Settings, Sprout, UtensilsCrossed } from 'lucide-react';
+import { BarChart3, ChevronRight, CircleHelp, CookingPot, LayoutDashboard, Settings, Sprout, UtensilsCrossed } from 'lucide-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import Ingredients from '@/pages/ingredients';
 import Menu from '@/pages/menu';
+import Dashboard from '@/pages/dashboard';
+import SettingsPage from '@/pages/settings';
 import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 
 const queryClient = new QueryClient();
@@ -129,106 +131,11 @@ function EmptyPanel({ icon, title, message, testId }: { icon: ReactNode; title: 
   );
 }
 
-function Dashboard() {
-  return (
-    <div className="animate-enter">
-      <PageIntro eyebrow="Today’s workspace" title="Good morning, MiMi." description="A clear view of food cost starts here. Keep this space close as you build the kitchen’s working record." />
-      <div className="grid grid-cols-[minmax(0,1.55fr)_minmax(280px,.8fr)] gap-5">
-        <section data-testid="card-dashboard-empty" className="paper-grid relative min-h-[328px] overflow-hidden rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.75)] p-8 shadow-[var(--shadow-soft)]">
-          <div className="relative z-10 flex h-full max-w-[440px] flex-col justify-between">
-            <div>
-              <div className="mb-6 flex items-center gap-2">
-                <span className="rounded-full bg-[hsl(var(--secondary))] px-2.5 py-1 font-data text-[9px] font-bold uppercase tracking-[.16em] text-[hsl(var(--primary))]">Start with the basics</span>
-              </div>
-              <h2 className="font-display text-[31px] leading-[1.1] tracking-[-.03em]">Your kitchen ledger is ready.</h2>
-              <p className="mt-4 max-w-[350px] text-[13px] leading-relaxed text-[hsl(var(--muted-foreground))]">Add ingredients and menu items to turn your daily notes into a dependable view of what each plate costs.</p>
-            </div>
-            <div className="flex items-center gap-3 pt-8">
-              <Link href="/ingredients" data-testid="link-dashboard-ingredients" className="group flex items-center gap-2 text-[12px] font-semibold text-[hsl(var(--primary))]">
-                Add ingredients
-                <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <span className="h-1 w-1 rounded-full bg-[hsl(var(--border))]" />
-              <Link href="/menu" data-testid="link-dashboard-menu" className="group flex items-center gap-2 text-[12px] font-semibold text-[hsl(var(--primary))]">
-                Build the menu
-                <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </div>
-          </div>
-          <div className="pointer-events-none absolute -bottom-12 -right-5 h-[235px] w-[285px] rotate-[-8deg] rounded-[48%] border-[1.5px] border-[hsl(var(--accent)/.23)]">
-            <div className="absolute left-12 top-8 h-[178px] w-[178px] rounded-[48%] border-[1.5px] border-[hsl(var(--accent)/.16)]" />
-            <div className="absolute -right-8 top-20 h-3 w-32 rotate-[-32deg] rounded-full bg-[hsl(var(--accent)/.2)]" />
-            <div className="absolute right-3 top-[108px] h-3 w-24 rotate-[-32deg] rounded-full bg-[hsl(var(--accent)/.14)]" />
-          </div>
-        </section>
-
-        <section data-testid="card-dashboard-overview" className="animate-enter-delay rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.78)] p-6 shadow-[var(--shadow-soft)]">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-data text-[9px] font-bold uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Overview</p>
-              <h2 className="mt-1 font-display text-[23px] tracking-[-.025em]">The essentials</h2>
-            </div>
-            <Database size={18} strokeWidth={1.5} className="text-[hsl(var(--accent))]" />
-          </div>
-          <div className="mt-8 divide-y divide-[hsl(var(--border))]">
-            <Link href="/ingredients" data-testid="link-overview-ingredients" className="group flex items-center justify-between py-4 first:pt-0">
-              <span className="flex items-center gap-3 text-[13px]"><PackageOpen size={16} className="text-[hsl(var(--muted-foreground))]" /> Ingredients</span>
-              <ChevronRight size={15} className="text-[hsl(var(--muted-foreground))] transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link href="/menu" data-testid="link-overview-menu" className="group flex items-center justify-between py-4">
-              <span className="flex items-center gap-3 text-[13px]"><List size={16} className="text-[hsl(var(--muted-foreground))]" /> Menu items</span>
-              <ChevronRight size={15} className="text-[hsl(var(--muted-foreground))] transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link href="/trends" data-testid="link-overview-trends" className="group flex items-center justify-between py-4 last:pb-0">
-              <span className="flex items-center gap-3 text-[13px]"><BarChart3 size={16} className="text-[hsl(var(--muted-foreground))]" /> Trends & history</span>
-              <ChevronRight size={15} className="text-[hsl(var(--muted-foreground))] transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
 function Trends() {
   return (
     <>
       <PageIntro eyebrow="A longer view" title="Trends & History" description="A future home for the patterns behind your food cost, menu mix, and the decisions you make over time." />
       <EmptyPanel icon={<BarChart3 size={26} strokeWidth={1.5} />} title="Your history will take shape here." message="Trends and history will appear once your workspace has a record to look back on." testId="empty-trends" />
-    </>
-  );
-}
-
-function SettingsPage() {
-  return (
-    <>
-      <PageIntro eyebrow="Workspace preferences" title="Settings" description="A few quiet controls for how MiMi’s Kitchen will work for you. More will be added when the kitchen is ready for them." />
-      <div className="max-w-[760px] space-y-5">
-        <section data-testid="settings-profit-threshold" className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.72)] p-6 shadow-[var(--shadow-soft)]">
-          <div className="flex items-start justify-between gap-8">
-            <div>
-              <p className="font-data text-[9px] font-bold uppercase tracking-[.18em] text-[hsl(var(--accent))]">Profit guardrail</p>
-              <h2 className="mt-2 font-display text-[24px] tracking-[-.025em]">Low profit margin threshold</h2>
-              <p className="mt-2 max-w-[500px] text-[13px] leading-relaxed text-[hsl(var(--muted-foreground))]">Choose when a menu item should be called out for a closer look. This setting is reserved for a future update.</p>
-            </div>
-            <span className="shrink-0 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--muted)/.65)] px-2.5 py-1 font-data text-[9px] uppercase tracking-[.12em] text-[hsl(var(--muted-foreground))]">Coming later</span>
-          </div>
-          <div className="mt-6 flex h-12 items-center justify-between rounded-xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted)/.35)] px-4 text-[12px] text-[hsl(var(--muted-foreground))]">
-            <span>Threshold controls are not active yet</span>
-            <span className="font-data text-[10px] text-[hsl(var(--muted-foreground)/.65)]">—</span>
-          </div>
-        </section>
-        <section data-testid="settings-clear-data" className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.72)] p-6 shadow-[var(--shadow-soft)]">
-          <div className="flex items-start justify-between gap-8">
-            <div>
-              <p className="font-data text-[9px] font-bold uppercase tracking-[.18em] text-[hsl(var(--accent))]">Workspace maintenance</p>
-              <h2 className="mt-2 font-display text-[24px] tracking-[-.025em]">Clear all data</h2>
-              <p className="mt-2 max-w-[500px] text-[13px] leading-relaxed text-[hsl(var(--muted-foreground))]">A reset option will live here in a future version. Your workspace is safe; there is currently nothing to clear from this screen.</p>
-            </div>
-            <span className="shrink-0 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--muted)/.65)] px-2.5 py-1 font-data text-[9px] uppercase tracking-[.12em] text-[hsl(var(--muted-foreground))]">Reserved</span>
-          </div>
-        </section>
-      </div>
     </>
   );
 }
