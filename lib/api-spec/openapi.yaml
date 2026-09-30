@@ -210,6 +210,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /menu-items/{id}/selling-price:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    patch:
+      operationId: updateMenuItemSellingPrice
+      tags: [menu]
+      summary: Update only the selling price, leaving the recipe and ingredient-cost baseline unchanged
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MenuItemPriceInput"
+      responses:
+        "200":
+          description: Menu item with recalculated profitability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItem"
+        "400":
+          description: Invalid selling price
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Menu item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /settings:
     get:
       operationId: getWorkspaceSettings
@@ -329,6 +366,14 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/RecipeLineInput"
+    MenuItemPriceInput:
+      type: object
+      additionalProperties: false
+      required: [sellingPrice]
+      properties:
+        sellingPrice:
+          type: number
+          exclusiveMinimum: 0
     RecipeLine:
       type: object
       required: [ingredientId, ingredientName, quantity, unit, ingredientCost]

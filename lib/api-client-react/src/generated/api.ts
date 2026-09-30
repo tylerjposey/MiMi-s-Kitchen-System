@@ -26,6 +26,7 @@ import type {
   IngredientInput,
   MenuItem,
   MenuItemInput,
+  MenuItemPriceInput,
   WorkspaceSettings,
   WorkspaceSettingsInput
 } from './api.schemas';
@@ -789,6 +790,95 @@ export const useDeleteMenuItem = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getDeleteMenuItemMutationOptions(options));
+    }
+
+export const getUpdateMenuItemSellingPriceUrl = (id: number,) => {
+
+
+
+
+  return `/api/menu-items/${id}/selling-price`
+}
+
+/**
+ * @summary Update only the selling price, leaving the recipe and ingredient-cost baseline unchanged
+ */
+export const updateMenuItemSellingPrice = async (id: number,
+    menuItemPriceInput: MenuItemPriceInput, options?: Parameters<typeof customFetch>[1]): Promise<MenuItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MenuItem>(getUpdateMenuItemSellingPriceUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(menuItemPriceInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateMenuItemSellingPriceMutationKey = () => ['updateMenuItemSellingPrice'] as const;
+
+export const getUpdateMenuItemSellingPriceMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMenuItemSellingPrice>>, TError,UpdateMenuItemSellingPriceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMenuItemSellingPrice>>, TError,UpdateMenuItemSellingPriceMutationVariables, TContext> => {
+
+const mutationKey = getUpdateMenuItemSellingPriceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMenuItemSellingPrice>>, UpdateMenuItemSellingPriceMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateMenuItemSellingPrice(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMenuItemSellingPriceMutationResult = NonNullable<Awaited<ReturnType<typeof updateMenuItemSellingPrice>>>
+    export type UpdateMenuItemSellingPriceMutationBody = BodyType<MenuItemPriceInput>
+    export type UpdateMenuItemSellingPriceMutationError = ErrorType<ErrorResponse>
+    export type UpdateMenuItemSellingPriceMutationVariables = {id: number;data: BodyType<MenuItemPriceInput>}
+
+    /**
+ * @summary Update only the selling price, leaving the recipe and ingredient-cost baseline unchanged
+ */
+export const useUpdateMenuItemSellingPrice = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMenuItemSellingPrice>>, TError,UpdateMenuItemSellingPriceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMenuItemSellingPrice>>,
+        TError,
+        UpdateMenuItemSellingPriceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateMenuItemSellingPriceMutationOptions(options));
     }
 
 export const getGetWorkspaceSettingsUrl = () => {

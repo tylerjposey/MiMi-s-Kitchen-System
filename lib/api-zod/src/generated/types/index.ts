@@ -13,6 +13,7 @@ export * from './ingredientInput';
 export * from './ingredientUnit';
 export * from './menuItem';
 export * from './menuItemInput';
+export * from './menuItemPriceInput';
 export * from './recipeLine';
 export * from './recipeLineInput';
 export * from './workspaceSettings';

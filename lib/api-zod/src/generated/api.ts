@@ -247,6 +247,43 @@ export const DeleteMenuItemResponse = zod.void()
 
 
 /**
+ * @summary Update only the selling price, leaving the recipe and ingredient-cost baseline unchanged
+ */
+
+
+
+export const UpdateMenuItemSellingPriceParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const updateMenuItemSellingPriceBodySellingPriceExclusiveMin = 0;
+
+
+
+export const UpdateMenuItemSellingPriceBody = zod.object({
+  "sellingPrice": zod.number().gt(updateMenuItemSellingPriceBodySellingPriceExclusiveMin)
+})
+
+export const UpdateMenuItemSellingPriceResponse = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "sellingPrice": zod.number(),
+  "recipeCost": zod.number(),
+  "profit": zod.number(),
+  "foodCostPercent": zod.number(),
+  "profitMarginPercent": zod.number(),
+  "costIncreased": zod.boolean().describe('Ingredient cost increased since this menu item\'s recipe was last saved'),
+  "recipe": zod.array(zod.object({
+  "ingredientId": zod.number().int(),
+  "ingredientName": zod.string(),
+  "quantity": zod.number(),
+  "unit": zod.enum(['lb', 'oz', 'gallon', 'quart', 'cup', 'fl oz', 'each']),
+  "ingredientCost": zod.number()
+}))
+})
+
+
+/**
  * @summary Get the profitability threshold
  */
 export const GetWorkspaceSettingsResponse = zod.object({

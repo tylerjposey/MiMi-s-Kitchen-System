@@ -15,6 +15,9 @@ import {
   UpdateMenuItemBody,
   UpdateMenuItemParams,
   UpdateMenuItemResponse,
+  UpdateMenuItemSellingPriceBody,
+  UpdateMenuItemSellingPriceParams,
+  UpdateMenuItemSellingPriceResponse,
   type IngredientUnit,
   type MenuItemInput,
 } from "@workspace/api-zod";
@@ -50,6 +53,14 @@ function ingredientCost(
   return (ingredient.purchasePriceCents / 100)
     * (quantity * factors[unit] / factors[ingredient.purchaseUnit])
     / ingredient.purchaseQuantity;
+}
+
+function priceInCents(price: number): number | null {
+  const cents = Math.round(price * 100);
+  return Number.isFinite(price) && Number.isSafeInteger(cents)
+    && cents >= 1 && cents <= 2_147_483_647
+    && Math.abs(price * 100 - cents) <= 0.000001
+    ? cents : null;
 }
 
 async function readMenuItems(id?: number) {
@@ -98,10 +109,8 @@ async function validateInput(data: MenuItemInput): Promise<
   if (!name || name.length > 160) {
     return { error: "Enter a menu item name (up to 160 characters)." };
   }
-  const cents = Math.round(data.sellingPrice * 100);
-  if (!Number.isFinite(data.sellingPrice) || !Number.isSafeInteger(cents)
-    || cents < 1 || cents > 2_147_483_647
-    || Math.abs(data.sellingPrice * 100 - cents) > 0.000001) {
+  const cents = priceInCents(data.sellingPrice);
+  if (cents === null) {
     return { error: "Selling price must be at least $0.01 with at most two decimal places." };
   }
   if (!data.recipe.length) {
@@ -198,6 +207,30 @@ router.put("/menu-items/:id", async (req, res): Promise<void> => {
   }
   const [result] = await readMenuItems(params.data.id);
   res.json(UpdateMenuItemResponse.parse(result));
+});
+
+router.patch("/menu-items/:id/selling-price", async (req, res): Promise<void> => {
+  const params = UpdateMenuItemSellingPriceParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Choose a valid menu item to edit." });
+    return;
+  }
+  const parsed = UpdateMenuItemSellingPriceBody.safeParse(req.body);
+  const cents = parsed.success ? priceInCents(parsed.data.sellingPrice) : null;
+  if (cents === null) {
+    res.status(400).json({ error: "Selling price must be at least $0.01 with at most two decimal places." });
+    return;
+  }
+  const [updated] = await db.update(menuItemsTable)
+    .set({ sellingPriceCents: cents })
+    .where(eq(menuItemsTable.id, params.data.id))
+    .returning({ id: menuItemsTable.id });
+  if (!updated) {
+    res.status(404).json({ error: "Menu item not found. Refresh the list and try again." });
+    return;
+  }
+  const [item] = await readMenuItems(updated.id);
+  res.json(UpdateMenuItemSellingPriceResponse.parse(item));
 });
 
 router.delete("/menu-items/:id", async (req, res): Promise<void> => {

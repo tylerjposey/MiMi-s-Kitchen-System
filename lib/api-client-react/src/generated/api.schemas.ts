@@ -73,6 +73,11 @@ export interface MenuItemInput {
   recipe: RecipeLineInput[];
 }
 
+export interface MenuItemPriceInput {
+  /** @exclusiveMinimum 0 */
+  sellingPrice: number;
+}
+
 export interface RecipeLine {
   ingredientId: number;
   ingredientName: string;
