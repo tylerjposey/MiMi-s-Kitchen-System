@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import { desc, eq, sql } from "drizzle-orm";
-import { db, ingredientsTable, recipeLinesTable, type IngredientRecord } from "@workspace/db";
+import { db, ingredientPriceHistoryTable, ingredientsTable, recipeLinesTable, type IngredientRecord } from "@workspace/db";
+import { appendMenuSnapshot, ensureMenuSnapshot } from "../lib/menu-history";
+import { dimensions } from "../lib/recipe-cost";
 import {
   CreateIngredientBody,
   CreateIngredientResponse,
@@ -119,10 +121,17 @@ router.post("/ingredients", async (req, res): Promise<void> => {
     return;
   }
 
-  const [row] = await db
-    .insert(ingredientsTable)
-    .values(input.value)
-    .returning();
+  const row = await db.transaction(async (tx) => {
+    const [created] = await tx.insert(ingredientsTable).values(input.value).returning();
+    await tx.insert(ingredientPriceHistoryTable).values({
+      ingredientId: created.id,
+      purchasePriceCents: created.purchasePriceCents,
+      purchaseQuantity: created.purchaseQuantity,
+      purchaseUnit: created.purchaseUnit,
+      costPerUnit: (created.purchasePriceCents / 100) / created.purchaseQuantity,
+    });
+    return created;
+  });
   res.status(201).json(CreateIngredientResponse.parse(presentIngredient(row)));
 });
 
@@ -143,19 +152,61 @@ router.put("/ingredients/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [row] = await db
-    .update(ingredientsTable)
-    .set({
+  const result = await db.transaction(async (tx) => {
+    const [previous] = await tx.select().from(ingredientsTable)
+      .where(eq(ingredientsTable.id, params.data.id)).for("update");
+    if (!previous) return { row: null, incompatible: false };
+    const costChanged = previous.purchasePriceCents !== input.value.purchasePriceCents
+      || previous.purchaseQuantity !== input.value.purchaseQuantity
+      || previous.purchaseUnit !== input.value.purchaseUnit;
+    let menuIds: number[] = [];
+    if (costChanged) {
+      const references = await tx.select({ menuItemId: recipeLinesTable.menuItemId, unit: recipeLinesTable.unit })
+        .from(recipeLinesTable).where(eq(recipeLinesTable.ingredientId, previous.id));
+      if (references.some(({ unit }) => dimensions[unit] !== dimensions[input.value.purchaseUnit])) {
+        return { row: null, incompatible: true };
+      }
+      const [priorHistory] = await tx.select({ id: ingredientPriceHistoryTable.id })
+        .from(ingredientPriceHistoryTable)
+        .where(eq(ingredientPriceHistoryTable.ingredientId, previous.id)).limit(1);
+      if (!priorHistory) {
+        await tx.insert(ingredientPriceHistoryTable).values({
+          ingredientId: previous.id,
+          date: previous.lastUpdated,
+          purchasePriceCents: previous.purchasePriceCents,
+          purchaseQuantity: previous.purchaseQuantity,
+          purchaseUnit: previous.purchaseUnit,
+          costPerUnit: (previous.purchasePriceCents / 100) / previous.purchaseQuantity,
+        });
+      }
+      menuIds = [...new Set(references.map((reference) => reference.menuItemId))];
+      for (const id of menuIds) await ensureMenuSnapshot(tx, id);
+    }
+    const [updated] = await tx.update(ingredientsTable).set({
       ...input.value,
-      lastUpdated: sql`CASE WHEN ${ingredientsTable.purchasePriceCents} <> ${input.value.purchasePriceCents} THEN NOW() ELSE ${ingredientsTable.lastUpdated} END`,
-    })
-    .where(eq(ingredientsTable.id, params.data.id))
-    .returning();
-  if (!row) {
+      lastUpdated: sql`CASE WHEN ${ingredientsTable.purchasePriceCents} <> ${input.value.purchasePriceCents} OR ${ingredientsTable.purchaseQuantity} <> ${input.value.purchaseQuantity} OR ${ingredientsTable.purchaseUnit} <> ${input.value.purchaseUnit} THEN NOW() ELSE ${ingredientsTable.lastUpdated} END`,
+    }).where(eq(ingredientsTable.id, params.data.id)).returning();
+    if (costChanged) {
+      await tx.insert(ingredientPriceHistoryTable).values({
+        ingredientId: updated.id,
+        purchasePriceCents: updated.purchasePriceCents,
+        purchaseQuantity: updated.purchaseQuantity,
+        purchaseUnit: updated.purchaseUnit,
+        costPerUnit: (updated.purchasePriceCents / 100) / updated.purchaseQuantity,
+      });
+      for (const id of menuIds) await appendMenuSnapshot(tx, id, "ingredient_cost");
+    }
+    return { row: updated, incompatible: false };
+  });
+  if (result.incompatible) {
+    res.status(409).json({ error: "This purchase unit is incompatible with an existing recipe. Update the recipe before changing the unit." });
+    return;
+  }
+  if (!result.row) {
     res.status(404).json({ error: "Ingredient not found. Refresh the list and try again." });
     return;
   }
-  res.json(UpdateIngredientResponse.parse(presentIngredient(row)));
+  res.json(UpdateIngredientResponse.parse(presentIngredient(result.row)));
 });
 
 router.delete("/ingredients/:id", async (req, res): Promise<void> => {

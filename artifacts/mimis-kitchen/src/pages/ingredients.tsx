@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getListIngredientsQueryKey, getListMenuItemsQueryKey, useCreateIngredient, useDeleteIngredient, useListIngredients, useUpdateIngredient, type Ingredient, type IngredientInput, type IngredientUnit } from '@workspace/api-client-react';
+import { getGetWorkspaceHistoryQueryKey, getListIngredientsQueryKey, getListMenuItemsQueryKey, useCreateIngredient, useDeleteIngredient, useListIngredients, useUpdateIngredient, type Ingredient, type IngredientInput, type IngredientUnit } from '@workspace/api-client-react';
 import { ArrowRightLeft, Pencil, Plus, RotateCcw, Sprout, Trash2, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,7 +34,7 @@ function IngredientForm({ ingredient, onSave, onCancel }: {
   onSave: (data: IngredientInput) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [saveError, setSaveError] = useState(false);
+   const [saveError, setSaveError] = useState<string | null>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -47,7 +47,7 @@ function IngredientForm({ ingredient, onSave, onCancel }: {
   });
   const { errors, isSubmitting } = form.formState;
   const submit = form.handleSubmit(async (values) => {
-    setSaveError(false);
+     setSaveError(null);
     try {
       await onSave({
         name: values.name.trim(),
@@ -56,8 +56,10 @@ function IngredientForm({ ingredient, onSave, onCancel }: {
         purchasePrice: Number(values.purchasePrice),
         supplier: values.supplier.trim() || null,
       });
-    } catch {
-      setSaveError(true);
+     } catch (error) {
+       setSaveError(error && typeof error === 'object' && 'status' in error && error.status === 409
+         ? 'This purchase unit is incompatible with an existing recipe. Update that recipe before changing the unit.'
+         : 'We couldn’t save this ingredient. Please check the details and try again.');
     }
   });
 
@@ -94,8 +96,8 @@ function IngredientForm({ ingredient, onSave, onCancel }: {
             {errors.supplier && <p role="alert" className="mt-1.5 text-[11px] text-[hsl(var(--destructive))]">{errors.supplier.message}</p>}
           </div>
         </div>
-        <p className="rounded-lg bg-[hsl(var(--secondary)/.48)] px-3.5 py-3 text-[11px] leading-relaxed text-[hsl(var(--muted-foreground))]">Cost per unit is calculated from purchase price and quantity. Last updated is set by the kitchen ledger when you add an ingredient or change its price.</p>
-        {saveError && <p role="alert" data-testid="error-save-ingredient" className="rounded-lg border border-[hsl(var(--destructive)/.25)] bg-[hsl(var(--destructive)/.06)] px-3 py-2.5 text-[12px] text-[hsl(var(--destructive))]">We couldn’t save this ingredient. Please check the details and try again.</p>}
+         <p className="rounded-lg bg-[hsl(var(--secondary)/.48)] px-3.5 py-3 text-[11px] leading-relaxed text-[hsl(var(--muted-foreground))]">Cost per unit is calculated from purchase price and quantity. Last updated is set by the kitchen ledger when you add an ingredient or change its price, quantity, or unit.</p>
+         {saveError && <p role="alert" data-testid="error-save-ingredient" className="rounded-lg border border-[hsl(var(--destructive)/.25)] bg-[hsl(var(--destructive)/.06)] px-3 py-2.5 text-[12px] text-[hsl(var(--destructive))]">{saveError}</p>}
         <div className="flex justify-end gap-2 border-t border-[hsl(var(--border))] pt-5">
           <button type="button" data-testid="button-cancel-ingredient" onClick={onCancel} disabled={isSubmitting} className={secondaryButton}>Cancel</button>
           <button type="submit" data-testid="button-save-ingredient" disabled={isSubmitting} className={primaryButton}>{isSubmitting ? 'Saving…' : ingredient ? 'Save changes' : 'Add ingredient'}</button>
@@ -159,6 +161,7 @@ export default function Ingredients() {
     else await create.mutateAsync({ data });
     await queryClient.invalidateQueries({ queryKey: getListIngredientsQueryKey() });
     await queryClient.invalidateQueries({ queryKey: getListMenuItemsQueryKey() });
+    await queryClient.invalidateQueries({ queryKey: getGetWorkspaceHistoryQueryKey() });
     setFormOpen(false);
     setEditing(null);
   };
@@ -168,6 +171,7 @@ export default function Ingredients() {
     try {
       await remove.mutateAsync({ id: deleting.id });
       await queryClient.invalidateQueries({ queryKey: getListIngredientsQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: getGetWorkspaceHistoryQueryKey() });
       if (selectedId === deleting.id) setSelectedId(null);
       setDeleting(null);
     } catch (error) {

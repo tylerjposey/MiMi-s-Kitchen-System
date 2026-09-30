@@ -27,6 +27,8 @@ import type {
   MenuItem,
   MenuItemInput,
   MenuItemPriceInput,
+  WorkspaceClearConfirmation,
+  WorkspaceHistory,
   WorkspaceSettings,
   WorkspaceSettingsInput
 } from './api.schemas';
@@ -1044,5 +1046,170 @@ export const useUpdateWorkspaceSettings = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getUpdateWorkspaceSettingsMutationOptions(options));
+    }
+
+export const getGetWorkspaceHistoryUrl = () => {
+
+
+
+
+  return `/api/history`
+}
+
+/**
+ * @summary List recorded ingredient prices and menu profitability snapshots
+ */
+export const getWorkspaceHistory = async ( options?: Parameters<typeof customFetch>[1]): Promise<WorkspaceHistory> => {
+
+  return customFetch<WorkspaceHistory>(getGetWorkspaceHistoryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWorkspaceHistoryQueryKey = () => {
+    return [
+    `/api/history`
+    ] as const;
+    }
+
+
+export const getGetWorkspaceHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getWorkspaceHistory>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkspaceHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWorkspaceHistoryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkspaceHistory>>> = ({ signal }) => getWorkspaceHistory({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWorkspaceHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWorkspaceHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getWorkspaceHistory>>>
+export type GetWorkspaceHistoryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List recorded ingredient prices and menu profitability snapshots
+ */
+
+export function useGetWorkspaceHistory<TData = Awaited<ReturnType<typeof getWorkspaceHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkspaceHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWorkspaceHistoryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getClearWorkspaceDataUrl = () => {
+
+
+
+
+  return `/api/workspace/data`
+}
+
+/**
+ * @summary Permanently remove all kitchen data and restore default settings
+ */
+export const clearWorkspaceData = async (workspaceClearConfirmation: WorkspaceClearConfirmation, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getClearWorkspaceDataUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(workspaceClearConfirmation)
+  }
+);}
+
+
+
+
+
+export const getClearWorkspaceDataMutationKey = () => ['clearWorkspaceData'] as const;
+
+export const getClearWorkspaceDataMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearWorkspaceData>>, TError,ClearWorkspaceDataMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearWorkspaceData>>, TError,ClearWorkspaceDataMutationVariables, TContext> => {
+
+const mutationKey = getClearWorkspaceDataMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearWorkspaceData>>, ClearWorkspaceDataMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  clearWorkspaceData(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClearWorkspaceDataMutationResult = NonNullable<Awaited<ReturnType<typeof clearWorkspaceData>>>
+    export type ClearWorkspaceDataMutationBody = BodyType<WorkspaceClearConfirmation>
+    export type ClearWorkspaceDataMutationError = ErrorType<ErrorResponse>
+    export type ClearWorkspaceDataMutationVariables = {data: BodyType<WorkspaceClearConfirmation>}
+
+    /**
+ * @summary Permanently remove all kitchen data and restore default settings
+ */
+export const useClearWorkspaceData = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearWorkspaceData>>, TError,ClearWorkspaceDataMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof clearWorkspaceData>>,
+        TError,
+        ClearWorkspaceDataMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClearWorkspaceDataMutationOptions(options));
     }
 

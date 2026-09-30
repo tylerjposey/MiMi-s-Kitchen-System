@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useGetWorkspaceSettings, useListIngredients, useListMenuItems, type MenuItem } from '@workspace/api-client-react';
-import { ChevronDown, ChevronRight, RotateCcw, SlidersHorizontal, UtensilsCrossed } from 'lucide-react';
+import { useGetWorkspaceHistory, useGetWorkspaceSettings, useListIngredients, useListMenuItems, type MenuItem } from '@workspace/api-client-react';
+import { ChevronDown, ChevronRight, RotateCcw, SlidersHorizontal, TrendingDown, TrendingUp, UtensilsCrossed } from 'lucide-react';
 import { Link } from 'wouter';
 import WhatIfPricing from './what-if-pricing';
 
@@ -51,13 +51,29 @@ export default function Dashboard() {
   const menu = useListMenuItems();
   const ingredients = useListIngredients();
   const settings = useGetWorkspaceSettings();
-  const loading = menu.isLoading || ingredients.isLoading || settings.isLoading;
-  const error = menu.isError || ingredients.isError || settings.isError;
+  const history = useGetWorkspaceHistory();
+  const loading = menu.isLoading || ingredients.isLoading || settings.isLoading || history.isLoading;
+  const error = menu.isError || ingredients.isError || settings.isError || history.isError;
   const items = menu.data ?? [];
   const threshold = settings.data?.lowProfitMarginThreshold;
   const average = (key: 'foodCostPercent' | 'profitMarginPercent') => items.length ? rate(items.reduce((sum, item) => sum + item[key], 0) / items.length) : '—';
   const highest = items.reduce<MenuItem | null>((best, item) => !best || item.recipeCost > best.recipeCost ? item : best, null);
   const lowest = items.reduce<MenuItem | null>((best, item) => !best || item.profitMarginPercent < best.profitMarginPercent ? item : best, null);
+  const alerts: { id: string; title: string; detail: string; type: 'cost' | 'margin' }[] = [];
+  for (const ingredient of ingredients.data ?? []) {
+    const rows = (history.data?.ingredientPrices ?? []).filter((row) => row.ingredientId === ingredient.id);
+    if (rows.length < 2) continue;
+    const before = rows[rows.length - 2].costPerUnit;
+    const after = rows[rows.length - 1].costPerUnit;
+    if (after > before && rows[rows.length - 2].purchaseUnit === rows[rows.length - 1].purchaseUnit) alerts.push({ id: `ingredient-${ingredient.id}`, title: `${ingredient.name} cost increased`, detail: `${amount(before)} → ${amount(after)} per ${rows[rows.length - 1].purchaseUnit}${before > 0 ? ` · +${percent.format((after - before) / before * 100)}%` : ''}`, type: 'cost' });
+  }
+  for (const item of items) {
+    const rows = (history.data?.menuProfitability ?? []).filter((row) => row.menuItemId === item.id);
+    if (rows.length < 2) continue;
+    const before = rows[rows.length - 2].profitMarginPercent;
+    const after = rows[rows.length - 1].profitMarginPercent;
+     if (rows[rows.length - 1].source === 'ingredient_cost' && after < before) alerts.push({ id: `menu-${item.id}`, title: `${item.name} margin dropped`, detail: `${rate(before)} → ${rate(after)} · down ${percent.format(before - after)} percentage points`, type: 'margin' });
+  }
   const cards = [
     ['Average Food Cost %', average('foodCostPercent'), 'average-food-cost', 'Unweighted across menu items'],
     ['Average Profit Margin %', average('profitMarginPercent'), 'average-profit-margin', 'Unweighted across menu items'],
@@ -69,9 +85,14 @@ export default function Dashboard() {
   return <div className="animate-enter">
     <div className="mb-9"><p className="font-data text-[10px] font-bold uppercase tracking-[.2em] text-[hsl(var(--accent))]">Plate economics / overview</p><h1 className="mt-2 font-display text-[42px] leading-[1.05] tracking-[-.035em]">Dashboard</h1><p className="mt-3 max-w-[620px] text-[14px] leading-relaxed text-[hsl(var(--muted-foreground))]">A dependable view of what each plate costs and what it leaves behind. Figures follow current ingredient prices.</p></div>
     {loading ? <div data-testid="loading-dashboard" aria-label="Loading profitability" className="space-y-5"><div className="grid grid-cols-2 gap-4 lg:grid-cols-3">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-36 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div><div className="h-56 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" /></div>
-    : error ? <section data-testid="error-dashboard" className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.75)] px-8 py-16 text-center"><h2 className="font-display text-[25px]">The profitability view couldn’t be loaded.</h2><p className="mt-2 text-[13px] text-[hsl(var(--muted-foreground))]">Check your connection and try again. Your entries are safe.</p><button type="button" data-testid="button-retry-dashboard" onClick={() => { if (menu.isError) void menu.refetch(); if (ingredients.isError) void ingredients.refetch(); if (settings.isError) void settings.refetch(); }} className={`${secondaryButton} mt-5`}><RotateCcw size={14} /> Try again</button></section>
+    : error ? <section data-testid="error-dashboard" className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.75)] px-8 py-16 text-center"><h2 className="font-display text-[25px]">The profitability view couldn’t be loaded.</h2><p className="mt-2 text-[13px] text-[hsl(var(--muted-foreground))]">Check your connection and try again. Your entries are safe.</p><button type="button" data-testid="button-retry-dashboard" onClick={() => { if (menu.isError) void menu.refetch(); if (ingredients.isError) void ingredients.refetch(); if (settings.isError) void settings.refetch(); if (history.isError) void history.refetch(); }} className={`${secondaryButton} mt-5`}><RotateCcw size={14} /> Try again</button></section>
     : <>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">{cards.map(([label, value, id, note], i) => <section key={id} data-testid={`card-dashboard-${id}`} className={`min-h-[142px] rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.78)] p-5 shadow-[var(--shadow-soft)] ${i === 1 ? 'bg-[hsl(var(--secondary)/.55)]' : ''}`}><p className="font-data text-[9px] font-bold uppercase leading-relaxed tracking-[.1em] text-[hsl(var(--muted-foreground))]">{label}</p><p data-testid={`text-dashboard-${id}`} className={`mt-4 break-words font-display tracking-[-.03em] ${i === 2 || i === 3 ? 'text-[23px]' : 'text-[32px]'}`}>{value}</p><p className="mt-1 text-[10px] text-[hsl(var(--muted-foreground))]">{note}</p></section>)}</div>
+       <section data-testid="dashboard-cost-alerts" className="mt-8 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.78)] shadow-[var(--shadow-soft)]">
+         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[hsl(var(--border))] px-5 py-4"><div><p className="font-data text-[9px] font-bold uppercase tracking-[.18em] text-[hsl(var(--accent))]">Since the last record</p><h2 className="mt-1 font-display text-[23px] tracking-[-.025em]">Cost-change alerts</h2></div><Link href="/trends" data-testid="link-dashboard-trends" className="text-[11px] font-semibold text-[hsl(var(--primary))] hover:underline">Review history →</Link></div>
+         {!alerts.length ? <p data-testid="empty-dashboard-alerts" className="px-5 py-6 text-[12px] text-[hsl(var(--muted-foreground))]">No recorded ingredient cost increases or menu margin drops to show. Alerts appear here when consecutive history records show a change.</p>
+           : <div className="divide-y divide-[hsl(var(--border)/.7)]">{alerts.map((alert) => <div key={alert.id} data-testid={`alert-dashboard-${alert.id}`} className="flex items-start gap-3 px-5 py-4"><span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--secondary)/.6)] text-[hsl(var(--accent))]">{alert.type === 'cost' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}</span><div><p className="text-[12px] font-semibold">{alert.title}</p><p className="mt-1 font-data text-[10px] tabular-nums text-[hsl(var(--muted-foreground))]">{alert.detail}</p></div></div>)}</div>}
+       </section>
       <div className="mt-8 flex flex-wrap items-start justify-between gap-5"><div><p className="font-data text-[9px] font-bold uppercase tracking-[.18em] text-[hsl(var(--accent))]">Every plate, accounted for</p><h2 className="mt-1 font-display text-[27px] tracking-[-.03em]">Menu profitability</h2><p className="mt-1 text-[12px] text-[hsl(var(--muted-foreground))]">All menu items, calculated from the latest server-returned ingredient costs.</p></div><Link href="/settings" data-testid="link-dashboard-threshold" className={`${secondaryButton} shrink-0`}><SlidersHorizontal size={14} /> Low margin threshold: {threshold === undefined ? '—' : rate(threshold)}</Link></div>
       {!items.length ? <section data-testid="empty-dashboard" className="paper-grid mt-5 flex min-h-[290px] flex-col items-center justify-center rounded-2xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--card)/.68)] px-8 text-center"><div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]"><UtensilsCrossed size={25} strokeWidth={1.5} /></div><h3 className="font-display text-[25px]">The first plate starts the picture.</h3><p className="mt-2 text-[13px] text-[hsl(var(--muted-foreground))]">No menu items yet. Add ingredients, then build a recipe to see its real margin here.</p><div className="mt-6 flex gap-5"><Link href="/ingredients" data-testid="link-dashboard-ingredients" className="text-[12px] font-semibold text-[hsl(var(--primary))] hover:underline">Add ingredients</Link><Link href="/menu" data-testid="link-dashboard-menu" className="text-[12px] font-semibold text-[hsl(var(--primary))] hover:underline">Build the menu</Link></div></section>
        : <section data-testid="table-dashboard-items" className="mt-5 overflow-x-auto rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.84)] shadow-[var(--shadow-soft)]"><table className="w-full min-w-[1050px] table-fixed border-collapse text-left"><colgroup><col className="w-[15%]" /><col className="w-[11%]" /><col className="w-[10%]" /><col className="w-[9%]" /><col className="w-[11%]" /><col className="w-[12%]" /><col className="w-[12%]" /><col className="w-[8%]" /><col className="w-[12%]" /></colgroup><thead className="bg-[hsl(var(--secondary)/.38)]"><tr>{['Menu Item', 'Ingredient Cost', 'Selling Price', 'Profit', 'Food Cost %', 'Profit Margin %', 'Status', 'What-If', 'Expand / Collapse'].map((heading) => <th key={heading} scope="col" className="px-2 py-4 first:pl-5 last:pr-5 font-data text-[9px] font-bold uppercase leading-snug tracking-[.06em] text-[hsl(var(--muted-foreground))]">{heading}</th>)}</tr></thead>{items.map((item) => <PlateRow key={item.id} item={item} threshold={threshold ?? 60} />)}</table></section>}

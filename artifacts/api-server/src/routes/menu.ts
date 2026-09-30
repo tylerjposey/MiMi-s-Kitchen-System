@@ -5,8 +5,9 @@ import {
   ingredientsTable,
   menuItemsTable,
   recipeLinesTable,
-  type IngredientRecord,
 } from "@workspace/db";
+import { appendMenuSnapshot, ensureMenuSnapshot } from "../lib/menu-history";
+import { dimensions, ingredientCost } from "../lib/recipe-cost";
 import {
   CreateMenuItemBody,
   CreateMenuItemResponse,
@@ -18,42 +19,10 @@ import {
   UpdateMenuItemSellingPriceBody,
   UpdateMenuItemSellingPriceParams,
   UpdateMenuItemSellingPriceResponse,
-  type IngredientUnit,
   type MenuItemInput,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
-
-const dimensions: Record<IngredientUnit, "weight" | "volume" | "count"> = {
-  lb: "weight",
-  oz: "weight",
-  gallon: "volume",
-  quart: "volume",
-  cup: "volume",
-  "fl oz": "volume",
-  each: "count",
-};
-
-// Conversion factors within their dimension, in oz / fl oz / each.
-const factors: Record<IngredientUnit, number> = {
-  lb: 16,
-  oz: 1,
-  gallon: 128,
-  quart: 32,
-  cup: 8,
-  "fl oz": 1,
-  each: 1,
-};
-
-function ingredientCost(
-  ingredient: IngredientRecord,
-  quantity: number,
-  unit: IngredientUnit,
-): number {
-  return (ingredient.purchasePriceCents / 100)
-    * (quantity * factors[unit] / factors[ingredient.purchaseUnit])
-    / ingredient.purchaseQuantity;
-}
 
 function priceInCents(price: number): number | null {
   const cents = Math.round(price * 100);
@@ -170,6 +139,7 @@ router.post("/menu-items", async (req, res): Promise<void> => {
   const id = await db.transaction(async (tx) => {
     const [created] = await tx.insert(menuItemsTable).values(item).returning({ id: menuItemsTable.id });
     await tx.insert(recipeLinesTable).values(recipe.map((line) => ({ ...line, menuItemId: created.id })));
+    await appendMenuSnapshot(tx, created.id, "initial");
     return created.id;
   });
   const [created] = await readMenuItems(id);
@@ -194,11 +164,16 @@ router.put("/menu-items/:id", async (req, res): Promise<void> => {
   }
   const { recipe, ...item } = input.value;
   const updated = await db.transaction(async (tx) => {
+    const [old] = await tx.select({ id: menuItemsTable.id }).from(menuItemsTable)
+      .where(eq(menuItemsTable.id, params.data.id)).for("update");
+    if (!old) return false;
+    await ensureMenuSnapshot(tx, old.id);
     const [existing] = await tx.update(menuItemsTable).set(item)
       .where(eq(menuItemsTable.id, params.data.id)).returning({ id: menuItemsTable.id });
     if (!existing) return false;
     await tx.delete(recipeLinesTable).where(eq(recipeLinesTable.menuItemId, existing.id));
     await tx.insert(recipeLinesTable).values(recipe.map((line) => ({ ...line, menuItemId: existing.id })));
+    await appendMenuSnapshot(tx, existing.id, "recipe");
     return true;
   });
   if (!updated) {
@@ -221,15 +196,21 @@ router.patch("/menu-items/:id/selling-price", async (req, res): Promise<void> =>
     res.status(400).json({ error: "Selling price must be at least $0.01 with at most two decimal places." });
     return;
   }
-  const [updated] = await db.update(menuItemsTable)
-    .set({ sellingPriceCents: cents })
-    .where(eq(menuItemsTable.id, params.data.id))
-    .returning({ id: menuItemsTable.id });
+  const updated = await db.transaction(async (tx) => {
+    const [existing] = await tx.select().from(menuItemsTable)
+      .where(eq(menuItemsTable.id, params.data.id)).for("update");
+    if (!existing) return false;
+    if (existing.sellingPriceCents === cents) return true;
+    await ensureMenuSnapshot(tx, existing.id);
+    await tx.update(menuItemsTable).set({ sellingPriceCents: cents }).where(eq(menuItemsTable.id, existing.id));
+    await appendMenuSnapshot(tx, existing.id, "selling_price");
+    return true;
+  });
   if (!updated) {
     res.status(404).json({ error: "Menu item not found. Refresh the list and try again." });
     return;
   }
-  const [item] = await readMenuItems(updated.id);
+  const [item] = await readMenuItems(params.data.id);
   res.json(UpdateMenuItemSellingPriceResponse.parse(item));
 });
 

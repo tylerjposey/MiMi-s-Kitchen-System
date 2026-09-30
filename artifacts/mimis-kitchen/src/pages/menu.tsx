@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getListMenuItemsQueryKey, useCreateMenuItem, useDeleteMenuItem, useListIngredients, useListMenuItems, useUpdateMenuItem, type Ingredient, type MenuItem, type MenuItemInput } from '@workspace/api-client-react';
+import { getGetWorkspaceHistoryQueryKey, getListMenuItemsQueryKey, useCreateMenuItem, useDeleteMenuItem, useListIngredients, useListMenuItems, useUpdateMenuItem, type Ingredient, type MenuItem, type MenuItemInput } from '@workspace/api-client-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { BookOpen, Pencil, Plus, RotateCcw, Trash2, UtensilsCrossed } from 'lucide-react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
@@ -190,6 +190,7 @@ export default function Menu() {
     if (editing) await update.mutateAsync({ id: editing.id, data });
     else await create.mutateAsync({ data });
     await queryClient.invalidateQueries({ queryKey: getListMenuItemsQueryKey() });
+    await queryClient.invalidateQueries({ queryKey: getGetWorkspaceHistoryQueryKey() });
     setFormOpen(false);
     setEditing(null);
   };
@@ -199,6 +200,7 @@ export default function Menu() {
     try {
       await remove.mutateAsync({ id: deleting.id });
       await queryClient.invalidateQueries({ queryKey: getListMenuItemsQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: getGetWorkspaceHistoryQueryKey() });
       setDeleting(null);
     } catch {
       setDeleteError(true);

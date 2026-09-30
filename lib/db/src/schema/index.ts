@@ -1,5 +1,7 @@
 export * from "./ingredients";
+export * from "./ingredient-price-history";
 export * from "./menu";
+export * from "./menu-profitability-history";
 export * from "./settings";
 
 // Export your models here. Add one export per file

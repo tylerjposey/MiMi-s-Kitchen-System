@@ -1,0 +1,135 @@
+# Phase 6 — Historical Tracking, Trends, Data Reset, and Final Polish
+
+Continue building the existing MiMi’s Kitchen prototype.
+
+Do not redesign completed sections unless needed for consistency.
+
+For this final phase, implement historical tracking and the Trends / History page.
+
+Ingredient Price History:
+
+Whenever an ingredient purchase price changes, preserve the previous value instead of overwriting all historical information.
+
+Store:
+
+- Date
+- Purchase Price
+- Purchase Quantity
+- Purchase Unit
+- Calculated Cost Per Unit
+
+On the Trends / History page, create:
+
+Select Ingredient dropdown
+
+When selected, display:
+
+- Current Cost
+- Previous Cost
+- Percentage Change
+- Historical Price Table
+- Line Chart
+
+Chart:
+
+X-axis = Date
+
+Y-axis = Cost Per Unit
+
+Menu Profitability History:
+
+Whenever ingredient-cost changes affect a menu item, preserve enough information to show historical profitability.
+
+Store snapshots containing:
+
+- Date
+- Ingredient Cost
+- Selling Price
+- Profit
+- Food Cost %
+- Profit Margin %
+
+Create a Select Menu Item dropdown.
+
+When selected, show:
+
+- Ingredient Cost Over Time
+- Profit Over Time
+- Profit Margin Over Time
+
+Use simple line charts.
+
+If insufficient history exists, show a clean empty-state message instead of an error.
+
+Add simple informational cost-change alerts to the Dashboard.
+
+Examples:
+
+“Chicken Breast cost increased 12%.”
+
+“Chicken Teriyaki profit margin dropped from 64% to 59%.”
+
+These are visual application alerts only.
+
+Do not build email, text, push, or external notifications.
+
+Ingredient deletion protection:
+
+If an ingredient is currently being used by a recipe, do not silently delete it.
+
+Warn the user and either:
+- Prevent deletion until removed from recipes, or
+- Require a strong confirmation
+
+Prefer preventing deletion if it would break an existing recipe.
+
+Clear All Data:
+
+Add a Clear All Data option inside settings.
+
+It should display a confirmation dialog:
+
+“Are you sure you want to permanently remove all ingredient, menu, recipe, and history data?”
+
+Buttons:
+
+- Cancel
+- Clear All Data
+
+Never clear data without confirmation.
+
+After clearing, restore the application to its original empty state.
+
+Final quality checks:
+
+- Currency should display in U.S. dollars with two decimal places
+- Percentages should display consistently
+- Prevent division by zero
+- Prevent negative prices or quantities
+- Maintain persistence after page refresh
+- Ensure changing ingredient costs updates recipe costs
+- Ensure changing recipe costs updates Dashboard calculations
+- Ensure navigation still works correctly
+- Ensure empty states display cleanly
+- Ensure charts do not error when data is missing
+
+Do not add:
+
+- POS integration
+- Chowbus integration
+- DoorDash integration
+- Customer ordering
+- Inventory depletion
+- Employee accounts
+- Labor costs
+- Rent
+- Utilities
+- Packaging costs
+- Tax accounting
+- Menu categories
+- Sales forecasting
+- Marketing tools
+
+The finished prototype should remain focused on this central question:
+
+“Given what our ingredients currently cost, how much does each menu item cost us to make, how profitable is it, and what happens if ingredient costs or selling prices change?”

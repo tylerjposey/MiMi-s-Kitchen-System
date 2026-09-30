@@ -9,6 +9,7 @@ import Ingredients from '@/pages/ingredients';
 import Menu from '@/pages/menu';
 import Dashboard from '@/pages/dashboard';
 import SettingsPage from '@/pages/settings';
+import Trends from '@/pages/trends';
 import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 
 const queryClient = new QueryClient();
@@ -48,9 +49,9 @@ function AppShell({ children }: { children: ReactNode }) {
   const pageLabel = location === '/' ? 'Dashboard' : location.startsWith('/ingredients') ? 'Ingredients' : location.startsWith('/menu') ? 'Menu' : location.startsWith('/trends') ? 'Trends & History' : 'Settings';
 
   return (
-    <div className="workspace-shell flex min-h-[100dvh]">
-      <aside className="flex w-[254px] shrink-0 flex-col bg-[hsl(var(--sidebar))] px-4 py-5 text-[hsl(var(--sidebar-foreground))]">
-        <div className="flex items-center gap-3 px-2 pb-9">
+    <div className="workspace-shell flex min-h-[100dvh] flex-col md:flex-row">
+      <aside className="flex w-full shrink-0 flex-col bg-[hsl(var(--sidebar))] px-4 py-4 text-[hsl(var(--sidebar-foreground))] md:w-[254px] md:py-5">
+        <div className="flex items-center gap-3 px-2 pb-4 md:pb-9">
           <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[hsl(var(--sidebar-primary))] text-[hsl(var(--sidebar-primary-foreground))] shadow-[0_7px_18px_rgba(226,201,117,.18)]">
             <CookingPot size={20} strokeWidth={1.8} />
           </div>
@@ -60,15 +61,15 @@ function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <div className="px-3 pb-3 font-data text-[9px] font-bold uppercase tracking-[.2em] text-[hsl(var(--sidebar-foreground)/.36)]">Workspace</div>
-        <nav aria-label="Primary navigation" className="space-y-1">
+        <div className="hidden px-3 pb-3 font-data text-[9px] font-bold uppercase tracking-[.2em] text-[hsl(var(--sidebar-foreground)/.36)] md:block">Workspace</div>
+        <nav aria-label="Primary navigation" className="grid grid-cols-2 gap-1 md:block md:space-y-1">
           <NavItem href="/" label="Dashboard" icon={<LayoutDashboard size={17} strokeWidth={1.7} />} testId="link-dashboard" />
           <NavItem href="/ingredients" label="Ingredients" icon={<Sprout size={17} strokeWidth={1.7} />} testId="link-ingredients" />
           <NavItem href="/menu" label="Menu" icon={<UtensilsCrossed size={17} strokeWidth={1.7} />} testId="link-menu" />
           <NavItem href="/trends" label="Trends & History" icon={<BarChart3 size={17} strokeWidth={1.7} />} testId="link-trends" />
         </nav>
 
-        <div className="mt-auto space-y-1">
+        <div className="mt-auto hidden space-y-1 md:block">
           <div className="mx-3 mb-4 h-px bg-[hsl(var(--sidebar-border))]" />
           <Link href="/settings" data-testid="link-settings" className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors ${location.startsWith('/settings') ? 'bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--sidebar-foreground))]' : 'text-[hsl(var(--sidebar-foreground)/.62)] hover:bg-[hsl(var(--sidebar-accent)/.72)] hover:text-[hsl(var(--sidebar-foreground))]'}`}>
             <Settings size={17} strokeWidth={1.7} className={location.startsWith('/settings') ? 'text-[hsl(var(--sidebar-primary))]' : 'text-[hsl(var(--sidebar-foreground)/.5)] group-hover:text-[hsl(var(--sidebar-primary))]'} />
@@ -85,14 +86,14 @@ function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="min-w-0 flex-1">
-        <header className="flex h-[76px] items-center justify-between border-b border-[hsl(var(--border)/.78)] bg-[hsl(var(--background)/.72)] px-10 backdrop-blur-sm">
+        <header className="flex h-[64px] items-center justify-between border-b border-[hsl(var(--border)/.78)] bg-[hsl(var(--background)/.72)] px-4 backdrop-blur-sm sm:px-6 md:h-[76px] md:px-10">
           <div className="flex items-center gap-2 text-[12px] text-[hsl(var(--muted-foreground))]">
             <span className="font-data text-[10px] uppercase tracking-[.18em]">Workspace</span>
             <ChevronRight size={13} />
             <span className="font-medium text-[hsl(var(--foreground))]">{pageLabel}</span>
           </div>
           <div className="flex items-center gap-5">
-            <div data-testid="status-workspace" className="flex items-center gap-2 text-[11px] text-[hsl(var(--muted-foreground))]">
+            <div data-testid="status-workspace" className="hidden items-center gap-2 text-[11px] text-[hsl(var(--muted-foreground))] sm:flex">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--primary))] shadow-[0_0_0_4px_hsl(var(--primary)/.12)]" />
               Workspace ready
             </div>
@@ -101,42 +102,9 @@ function AppShell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </header>
-        <div className="mx-auto max-w-[1240px] px-10 py-10">{children}</div>
+        <div className="mx-auto max-w-[1240px] px-4 py-6 sm:px-6 md:px-10 md:py-10">{children}</div>
       </main>
     </div>
-  );
-}
-
-function PageIntro({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
-  return (
-    <div className="animate-enter mb-9">
-      <p className="font-data text-[10px] font-bold uppercase tracking-[.2em] text-[hsl(var(--accent))]">{eyebrow}</p>
-      <h1 className="mt-2 font-display text-[42px] leading-[1.05] tracking-[-.035em] text-[hsl(var(--foreground))]">{title}</h1>
-      <p className="mt-3 max-w-[560px] text-[14px] leading-relaxed text-[hsl(var(--muted-foreground))]">{description}</p>
-    </div>
-  );
-}
-
-function EmptyPanel({ icon, title, message, testId }: { icon: ReactNode; title: string; message: string; testId: string }) {
-  return (
-    <section data-testid={testId} className="paper-grid relative flex min-h-[340px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--card)/.68)] px-8 text-center">
-      <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full border border-[hsl(var(--accent)/.12)]" />
-      <div className="absolute -bottom-24 -left-10 h-52 w-52 rounded-full border border-[hsl(var(--primary)/.1)]" />
-      <div className="relative mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
-        {icon}
-      </div>
-      <h2 className="relative font-display text-[25px] tracking-[-.025em]">{title}</h2>
-      <p data-testid={`${testId}-message`} className="relative mt-2 text-[13px] text-[hsl(var(--muted-foreground))]">{message}</p>
-    </section>
-  );
-}
-
-function Trends() {
-  return (
-    <>
-      <PageIntro eyebrow="A longer view" title="Trends & History" description="A future home for the patterns behind your food cost, menu mix, and the decisions you make over time." />
-      <EmptyPanel icon={<BarChart3 size={26} strokeWidth={1.5} />} title="Your history will take shape here." message="Trends and history will appear once your workspace has a record to look back on." testId="empty-trends" />
-    </>
   );
 }
 

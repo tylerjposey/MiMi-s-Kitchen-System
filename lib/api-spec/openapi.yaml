@@ -16,6 +16,8 @@ tags:
     description: Menu items and their ingredient recipes
   - name: settings
     description: Workspace profitability preferences
+  - name: history
+    description: Historical purchasing and menu profitability records
 paths:
   /healthz:
     get:
@@ -100,6 +102,12 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Ingredient not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Purchase unit is incompatible with an existing recipe
           content:
             application/json:
               schema:
@@ -282,6 +290,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /history:
+    get:
+      operationId: getWorkspaceHistory
+      tags: [history]
+      summary: List recorded ingredient prices and menu profitability snapshots
+      responses:
+        "200":
+          description: Historical records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceHistory"
+  /workspace/data:
+    delete:
+      operationId: clearWorkspaceData
+      tags: [settings]
+      summary: Permanently remove all kitchen data and restore default settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceClearConfirmation"
+      responses:
+        "204":
+          description: Workspace returned to its original empty state
+        "400":
+          description: Confirmation missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -428,6 +468,53 @@ components:
       properties:
         lowProfitMarginThreshold:
           type: number
+    WorkspaceClearConfirmation:
+      type: object
+      additionalProperties: false
+      required: [confirmation]
+      properties:
+        confirmation:
+          type: string
+          enum: [CLEAR ALL DATA]
+    IngredientPriceHistory:
+      type: object
+      required: [id, ingredientId, date, purchasePrice, purchaseQuantity, purchaseUnit, costPerUnit]
+      properties:
+        id: { type: integer }
+        ingredientId: { type: integer }
+        date: { type: string, format: date-time }
+        purchasePrice: { type: number }
+        purchaseQuantity: { type: number }
+        purchaseUnit:
+          $ref: "#/components/schemas/IngredientUnit"
+        costPerUnit: { type: number }
+    MenuProfitabilityHistory:
+      type: object
+      required: [id, menuItemId, date, ingredientCost, sellingPrice, profit, foodCostPercent, profitMarginPercent, source]
+      properties:
+        id: { type: integer }
+        menuItemId: { type: integer }
+        date: { type: string, format: date-time }
+        ingredientCost: { type: number }
+        sellingPrice: { type: number }
+        profit: { type: number }
+        foodCostPercent: { type: number }
+        profitMarginPercent: { type: number }
+        source:
+          type: string
+          enum: [initial, ingredient_cost, recipe, selling_price]
+    WorkspaceHistory:
+      type: object
+      required: [ingredientPrices, menuProfitability]
+      properties:
+        ingredientPrices:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngredientPriceHistory"
+        menuProfitability:
+          type: array
+          items:
+            $ref: "#/components/schemas/MenuProfitabilityHistory"
     ErrorResponse:
       type: object
       required: [error]

@@ -123,7 +123,7 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
     margin: 0;
-    min-width: 980px;
+    min-width: 320px;
   }
 }
 

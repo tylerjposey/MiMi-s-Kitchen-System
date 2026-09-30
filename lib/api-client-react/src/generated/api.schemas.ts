@@ -111,6 +111,54 @@ export interface WorkspaceSettings {
   lowProfitMarginThreshold: number;
 }
 
+export type WorkspaceClearConfirmationConfirmation = typeof WorkspaceClearConfirmationConfirmation[keyof typeof WorkspaceClearConfirmationConfirmation];
+
+
+export const WorkspaceClearConfirmationConfirmation = {
+  CLEAR_ALL_DATA: 'CLEAR ALL DATA',
+} as const;
+
+export interface WorkspaceClearConfirmation {
+  confirmation: WorkspaceClearConfirmationConfirmation;
+}
+
+export interface IngredientPriceHistory {
+  id: number;
+  ingredientId: number;
+  date: string;
+  purchasePrice: number;
+  purchaseQuantity: number;
+  purchaseUnit: IngredientUnit;
+  costPerUnit: number;
+}
+
+export type MenuProfitabilityHistorySource = typeof MenuProfitabilityHistorySource[keyof typeof MenuProfitabilityHistorySource];
+
+
+export const MenuProfitabilityHistorySource = {
+  initial: 'initial',
+  ingredient_cost: 'ingredient_cost',
+  recipe: 'recipe',
+  selling_price: 'selling_price',
+} as const;
+
+export interface MenuProfitabilityHistory {
+  id: number;
+  menuItemId: number;
+  date: string;
+  ingredientCost: number;
+  sellingPrice: number;
+  profit: number;
+  foodCostPercent: number;
+  profitMarginPercent: number;
+  source: MenuProfitabilityHistorySource;
+}
+
+export interface WorkspaceHistory {
+  ingredientPrices: IngredientPriceHistory[];
+  menuProfitability: MenuProfitabilityHistory[];
+}
+
 export interface ErrorResponse {
   error: string;
 }

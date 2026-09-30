@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import {
+  getGetWorkspaceHistoryQueryKey,
   getListMenuItemsQueryKey,
   useUpdateMenuItemSellingPrice,
   type MenuItem,
@@ -73,6 +74,7 @@ export default function WhatIfPricing({ item, onClose }: { item: MenuItem; onClo
       queryClient.setQueryData<MenuItem[]>(getListMenuItemsQueryKey(), (items) =>
         items?.map((entry) => entry.id === saved.id ? saved : entry));
       void queryClient.invalidateQueries({ queryKey: getListMenuItemsQueryKey() });
+      void queryClient.invalidateQueries({ queryKey: getGetWorkspaceHistoryQueryKey() });
       onClose();
     } catch {
       setSaveError(true);

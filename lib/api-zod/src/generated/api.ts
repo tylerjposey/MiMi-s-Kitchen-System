@@ -308,3 +308,40 @@ export const UpdateWorkspaceSettingsResponse = zod.object({
 })
 
 
+/**
+ * @summary List recorded ingredient prices and menu profitability snapshots
+ */
+export const GetWorkspaceHistoryResponse = zod.object({
+  "ingredientPrices": zod.array(zod.object({
+  "id": zod.number().int(),
+  "ingredientId": zod.number().int(),
+  "date": zod.coerce.date(),
+  "purchasePrice": zod.number(),
+  "purchaseQuantity": zod.number(),
+  "purchaseUnit": zod.enum(['lb', 'oz', 'gallon', 'quart', 'cup', 'fl oz', 'each']),
+  "costPerUnit": zod.number()
+})),
+  "menuProfitability": zod.array(zod.object({
+  "id": zod.number().int(),
+  "menuItemId": zod.number().int(),
+  "date": zod.coerce.date(),
+  "ingredientCost": zod.number(),
+  "sellingPrice": zod.number(),
+  "profit": zod.number(),
+  "foodCostPercent": zod.number(),
+  "profitMarginPercent": zod.number(),
+  "source": zod.enum(['initial', 'ingredient_cost', 'recipe', 'selling_price'])
+}))
+})
+
+
+/**
+ * @summary Permanently remove all kitchen data and restore default settings
+ */
+export const ClearWorkspaceDataBody = zod.object({
+  "confirmation": zod.enum(['CLEAR ALL DATA'])
+})
+
+export const ClearWorkspaceDataResponse = zod.void()
+
+
