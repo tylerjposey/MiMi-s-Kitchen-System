@@ -25,6 +25,14 @@ The prototype covers 40+ menu items.
 
 **Out of scope:** replacing the POS, accounting or payroll features, inventory and waste tracking, automated receipt import.
 
+## Preview
+
+|[Dashboard](mimidash.png)
+
+|[Inventory Page](mimiinventory.png)
+
+|[Item Profitability Page](mimimenuprof.png)
+
 ## Results
 
 Presented to 5 judges and scored 42.4/50, the second-highest score. Strongest category was problem-solution fit (8.8/10).
