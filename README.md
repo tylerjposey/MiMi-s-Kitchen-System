@@ -27,11 +27,14 @@ The prototype covers 40+ menu items.
 
 ## Preview
 
-|[Dashboard](mimidash.png)
+### Dashboard
+![Dashboard](mimidash.png)
 
-|[Inventory Page](mimiinventory.png)
+### Inventory Page
+![Inventory Page](mimiinventory.png)
 
-|[Item Profitability Page](mimimenuprof.png)
+### Item Profitability Page
+![Item Profitability Page](mimimenuprof.png)
 
 ## Results
 
